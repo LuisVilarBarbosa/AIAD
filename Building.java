@@ -3,8 +3,13 @@ import java.util.Random;
 
 import jade.core.AID;
 import jade.core.Agent;
+import jade.core.behaviours.Behaviour;
 import jade.core.behaviours.CyclicBehaviour;
+import jade.domain.DFService;
+import jade.domain.FIPAException;
+import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.lang.acl.ACLMessage;
+import jade.proto.SubscriptionInitiator;
 import jade.wrapper.AgentController;
 import jade.wrapper.StaleProxyException;
 
@@ -17,8 +22,29 @@ public class Building extends Agent {
 
 	private ArrayList<String> elevators = new ArrayList();
 	private ArrayList<Integer> externalRequests = new ArrayList<>();
+	
+	private ArrayList<DFAgentDescription> descriptions = new ArrayList();
 
 	public void setup() {
+		DFAgentDescription template = new DFAgentDescription();
+		Behaviour b = new SubscriptionInitiator(
+				this, DFService.createSubscriptionMessage(this, getDefaultDF(), template, null)) {
+			protected void handleInform(ACLMessage inform) {
+				try {
+					DFAgentDescription[] dfds = DFService.decodeNotification(inform.getContent());
+					for(DFAgentDescription d: dfds) {
+						descriptions.add(d);
+					System.out.println("OI: " + d);
+					}
+					
+				} catch (FIPAException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+			}
+		};
+		addBehaviour(b);
 		for(int i = 0; i < nElevators; i++)
 			try {
 				AgentController ac = this.getContainerController().acceptNewAgent("Elevator"+i, new Elevator(this));
@@ -57,7 +83,7 @@ public class Building extends Agent {
 					addRequest(rand);
 				ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
 				for(int j = 0; j < nElevators; j++)
-					msg.addReceiver(elevators.get(j));
+					//msg.addReceiver();
 				msg.setContent(Integer.toString(123456));
 				send(msg);
 			}
