@@ -5,6 +5,9 @@ import jade.core.ProfileImpl;
 import jade.core.Runtime;
 import jade.util.Logger;
 import jade.util.leap.Properties;
+import jade.wrapper.AgentController;
+import jade.wrapper.ContainerController;
+import jade.wrapper.StaleProxyException;
 
 // Based on the Boot class source code of the version 4.5.0
 public class MyBoot extends Boot {
@@ -21,6 +24,7 @@ public class MyBoot extends Boot {
         try {
             // Create the Profile
             ProfileImpl p = null;
+            ContainerController containerController;
             if (args.length > 0) {
                 if (args[0].startsWith("-")) {
                     // Settings specified as command line arguments
@@ -46,15 +50,22 @@ public class MyBoot extends Boot {
             //#PJAVA_EXCLUDE_BEGIN
             // Check whether this is the Main Container or a peripheral container
             if (p.getBooleanProperty(Profile.MAIN, true)) {
-                Runtime.instance().createMainContainer(p);
+                containerController = Runtime.instance().createMainContainer(p);
             } else {
-                Runtime.instance().createAgentContainer(p);
+                containerController = Runtime.instance().createAgentContainer(p);
             }
             //#PJAVA_EXCLUDE_END
             /*#PJAVA_INCLUDE_BEGIN
             // Starts the container in SINGLE_MODE (Only one per JVM)
 			Runtime.instance().startUp(p);
 			#PJAVA_INCLUDE_END*/
+
+            try {
+                AgentController ac = containerController.acceptNewAgent("Building", new Building());
+                ac.start();
+            } catch (StaleProxyException e) {
+                e.printStackTrace();
+            }
         } catch (ProfileException pe) {
             System.err.println("Error creating the Profile [" + pe.getMessage() + "]");
             pe.printStackTrace();
