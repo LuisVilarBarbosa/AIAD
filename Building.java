@@ -34,7 +34,7 @@ public class Building extends Agent {
 					DFAgentDescription[] dfds = DFService.decodeNotification(inform.getContent());
 					for(DFAgentDescription d: dfds) {
 						descriptions.add(d);
-					System.out.println("OI: " + d);
+                        System.out.println("Agent " + d.getName().getName() + " created by building.");
 					}
 					
 				} catch (FIPAException e) {
