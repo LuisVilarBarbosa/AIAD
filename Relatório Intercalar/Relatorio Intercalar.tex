@@ -1,0 +1,153 @@
+\documentclass[a4paper]{article}
+
+%use the english line for english reports
+%usepackage[english]{babel}
+\usepackage[portuguese]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{indentfirst}
+\usepackage{graphicx}
+\usepackage{verbatim}
+\usepackage{listings}
+
+\begin{document}
+
+\setlength{\textwidth}{16cm}
+\setlength{\textheight}{22cm}
+
+\title{\Huge\textbf{Gestão de Elevadores}\linebreak\linebreak\linebreak
+\Large\textbf{Relatório Intercalar}\linebreak\linebreak
+\linebreak\linebreak
+\includegraphics[scale=0.1]{feup-logo.png}\linebreak\linebreak
+\linebreak\linebreak
+\Large{Mestrado Integrado em Engenharia Informática e Computação} \linebreak\linebreak
+\Large{Agentes e Inteligência Artificial Distribuída}\linebreak
+\Large{4º Ano 1º Semestre}\linebreak\linebreak
+}
+
+\author{\textbf{Grupo T01\_3:}\\ Luís  Barbosa - 201405729 - up201405729@fe.up.pt\\ Paulo Santos - 201403745 - up201403745@fe.up.pt \\ Sérgio Almeida  - 201403074 - up201403074@fe.up.pt \\\linebreak\linebreak \\
+ \\ Faculdade de Engenharia da Universidade do Porto \\ Rua Roberto Frias, s/n, 4200-465 Porto, Portugal \linebreak\linebreak\linebreak
+\linebreak\linebreak\vspace{1cm}}
+\date{5 de novembro de 2017}
+\maketitle
+\thispagestyle{empty}
+
+%************************************************************************************************
+%************************************************************************************************
+
+\newpage
+
+\tableofcontents
+
+%************************************************************************************************
+%************************************************************************************************
+
+%*************************************************************************************************
+%************************************************************************************************
+
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Enunciado}
+
+\subsection{Descrição do cenário} 
+
+O cenário do presente trabalho consiste num edifício de vários andares com diversos elevadores. Cada elevador possui uma carga máxima, que corresponde ao número máximo de pessoas que pode transportar.
+
+Os elevadores comunicam entre si informação relevante. Quando há um novo pedido numa determinada zona do edifício, este deve ser alocado a um dos elevadores existentes naquela zona. Os elevadores possuem uma lista de pisos em que têm que parar, podendo a mesma ser alterada dinamicamente para se incluirem novos pedidos.
+
+Periodicamente, os elevadores podem partilhar informação sobre os seus estados, no sentido de poderem atribuir tarefas a outros elevadores.
+
+O programa deve permitir que o utilizador configure o sistema, como o número de pisos do edifício, número de elevadores e a carga máxima de cada elevador.
+
+As necessidades dos utentes, como por exemplo a frequência de chamada de elevador em cada piso do edifício (devendo ser superior para o piso 0) e piso de destino, são geradas aleatoriamente. 
+
+Um elevador demora um tempo pré-definido a ir de um piso a outro, e o intervalo de tempo correspondente à paragem do elevador para entrada/saída de utentes também é contabilizado.
+
+\subsection{Objetivos do trabalho} 
+
+O trabalho tem como principal objetivo o desenvolvimento de um sistema multi-agente para a gestão eficiente dos elevadores de um determinado edifício, tendo em conta o cenário descrito acima.
+
+\subsection{Resultados esperados e forma de avaliação} 
+
+O programa irá apresentar estatísticas relativas ao desempenho dos vários elevadores, relativas ao tempo de espera máximo e mínimo, taxa de ocupação do elevador e tempo de uso/não uso do elevador.
+
+Como forma de avaliação, irá-se comparar o desempenho deste sistema multi-agente com outras estratégias de cooperação, como por exemplo um sistema tradicional em que cada elevador possui uma estratégia fixa e individual: atende o pedido o elevador que estiver mais próximo de onde foi feita a chamada. Também serão usados como forma de comparação sistemas em que existam dois botões de chamada vs teclado para indicação de piso de destino.
+
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Plataforma/Ferramenta}
+
+A ferramenta escolhida para o desenvolvimento deste trabalho foi JADE.
+
+\subsection{Para que serve} 
+
+JADE é uma \textit{framework} que permite o desenvolvimento de sistemas multi-agente.
+
+\subsection{Descrição das caraterísticas principais} 
+
+O JADE é compatível com FIPA, isto é, segue os padrões de software estabelecidos para agentes heterogéneos e interativos e para sistemas baseados em agentes.
+
+Possui um \textit{Agent Management System} que supervisiona o acesso e uso da plataforma, mantém um diretório com os identificadores dos agentes e do seu estado e faz com que cada agente esteja registado neste sistema. Além deste, possui um \textit{Directory Facilitator}, que funciona como um serviço de páginas amarelas.
+
+A plataforma pode ter vários \textit{containers}, onde se encontram os agentes. Estes podem estar em máquinas diferentes. O \textit{main container} inclui os serviços descritos anteriormente. Os agentes podem migrar entre \textit{containers}.
+
+A comunicação pode ser feita através de notificações, RMI ou IIOP. 
+
+O JADE possui várias ferramentas que simplificam a administração da plataforma e o desenvolvimento:
+
+\begin{itemize}
+\item RMA (Remote Monitoring Agent): Consola gráfica que permite visualizar a atividade da plataforma, bem como visualizar os \textit{containers} e o estado dos agentes.
+\item Dummy Agent: Permite interação com outros agentes, através do envio, receção e visualização de mensagens ACL.
+\item Sniffer Agent: Visualizar mensagens enviadas por/para o agente num diagrama UML. Este é informado pelo AMS quando um agente ou \textit{container} é criado/destruído.
+\item Directory Facilitator GUI: Permite que os agentes registem o seu serviço ou procurem neste.
+\item Introspector Agent: Monitoriza o ciclo de vida de um agente.
+\end{itemize}
+
+Nesta \textit{framework}, os agentes possuem \textit{behaviours}, que implementam as tarefas dos agentes.
+
+\subsection{Realce das funcionalidades relevantes para o trabalho} 
+
+De momento, e com base no código que já temos desenvolvido, é relevante o \textit{Directory Facilitator}, pois permite que os agentes se registem num serviço já existente.
+
+O facto de os agentes terem \textit{behaviours} permite-nos implementar a lógica necessária para cumprir os objetivos do trabalho.
+
+Como os agentes necessitam de partilhar informação sobre os seus estados, a comunicação através de mensagens ACL também será importante.
+
+Para no fim conseguirmos avaliar os resultados, as ferramentas enumeradas anteriormente também serão importantes para comparar diferentes implementações do sistema multi-agente.
+
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Especificação}
+
+\subsection{Identificação e caracterização dos agentes} 
+
+No nosso projeto, distinguem-se dois tipos de agentes: \textit{Elevator} e \textit{Building}.
+
+O \textit{Building} é um tipo de agente que fornece um serviço. Este possui um piso mínimo e máximo, entre os quais um certo número de elevadores funciona. Este é responsável pela criação de outros agentes, os \textit{Elevator}. Este agente pretende simular, através do seu comportamento, os pedidos existentes num edifício por parte dos utilizadores. Desta forma, cria pedidos num certo intervalo de tempo, enviando uma mensagem ACL do tipo \textit{INFORM} para os elevadores.
+
+O \textit{Elevator} é o agente que se regista no serviço fornecido pelo \textit{Building}. Possui um número máximo de pessoas, um tempo de movimento entre pisos e o seu andar atual. Cada \textit{Elevator} tem uma lista interna de pedidos a realizar, que é dinâmica, uma vez que pode ser alterada caso outros elevadores lhe atribuam um novo pedido. O seu comportamento consiste em satisfazer o próximo pedido da lista, simulando o tempo de movimento até esse piso.
+
+\subsection{Protocolos de interação} 
+
+ACLMessage (?)
+
+\subsection{Faseamento do projeto} 
+
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Recursos}
+
+\subsection{Bibliografia} 
+
+Slides do Moodle sobre JADE
+
+\subsection{Software} 
+
+JADE (http://jade.tilab.com/)
+
+Eclipse
+
+\end{document}
