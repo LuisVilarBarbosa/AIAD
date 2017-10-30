@@ -9,9 +9,11 @@ import jade.wrapper.AgentController;
 import jade.wrapper.ContainerController;
 import jade.wrapper.StaleProxyException;
 
+import java.util.ArrayList;
+
 // Based on the Boot class source code of the version 4.5.0
 public class MyBoot extends Boot {
-    public static final String DEFAULT_FILENAME = "leap.properties";
+    public static final String DEFAULT_FILENAME = "default.properties";
     private static Logger logger = Logger.getMyLogger("jade.MyBoot");
 
     /**
@@ -40,9 +42,8 @@ public class MyBoot extends Boot {
                     p = new ProfileImpl(args[0]);
                 }
             } else {
-                throw new ProfileException("No profile has been specified.");
                 // Settings specified in the default property file
-                //p = new ProfileImpl(DEFAULT_FILENAME);
+                p = new ProfileImpl(DEFAULT_FILENAME);
             }
 
             // Start a new JADE runtime system
@@ -61,7 +62,14 @@ public class MyBoot extends Boot {
 			#PJAVA_INCLUDE_END*/
 
             try {
-                AgentController ac = containerController.acceptNewAgent("Building", new Building());
+                // update "USAGE" message
+                int numFloors = Integer.parseInt(p.getParameter("numFloors", "3"));
+                int numElevators = Integer.parseInt(p.getParameter("numElevators", "5"));
+                ArrayList<Integer> maxWeights = new ArrayList<>();
+                for(int i = 1; i <= numElevators; i++)
+                    maxWeights.add(Integer.parseInt(p.getParameter("maxWeight" + i, "500")));
+
+                AgentController ac = containerController.acceptNewAgent("Building", new Building(numFloors, numElevators, maxWeights));
                 ac.start();
             } catch (StaleProxyException e) {
                 e.printStackTrace();

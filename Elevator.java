@@ -10,17 +10,17 @@ import java.util.ArrayList;
 import java.util.Random;
 
 public class Elevator extends Agent {
-	private int maxPeople = 8;  // not in use
+	private int maxWeight;  // not in use
 	private int moveTime = 20;
 	private int actualFloor = 0;
-	private Random random = new Random();
-	private Building building;
 
 	private ArrayList<Integer> internalRequests = new ArrayList<>();
 
-	public Elevator(Building building) {
+	public Elevator(int maxWeight) {
 		super();
-		this.building = building;
+		if(maxWeight < 0)
+		    throw new IllegalArgumentException("Invalid maximum weight: " + maxWeight);
+		this.maxWeight = maxWeight;
 	}
 
 	public void setup() {
@@ -29,12 +29,11 @@ public class Elevator extends Agent {
 		dfd.setName(getAID());
 		ServiceDescription sd = new ServiceDescription();
 		sd.setName(getName());
-		sd.setType("Agente ");
+		sd.setType("Agent");
 		dfd.addServices(sd);
 		try {
 			DFService.register(this, dfd);
 		} catch (FIPAException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -53,17 +52,10 @@ public class Elevator extends Agent {
 				}
 				actualFloor = nextFloor;
 			}
-			ACLMessage msg = receive();
-			if(msg != null) {
+			ACLMessage msg;
+			while((msg = receive()) != null){
 				System.out.println(this.getAgent().getName() + " msg: " + msg.getContent());
-				int n = random.nextInt() % 50;
-				for (int i = 0; i < n; i++) {
-					int rand = random.nextInt() % (building.getMaxFloor() - building.getMinFloor()) - building.getMinFloor();
-					if (rand > building.getMaxFloor())
-						internalRequests.add(0);
-					else
-						internalRequests.add(rand);
-				}
+				internalRequests.add(Integer.parseInt(msg.getContent()));
 			}
 		}
 	}
