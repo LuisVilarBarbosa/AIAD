@@ -65,13 +65,13 @@ Um elevador demora um tempo pré-definido a ir de um piso a outro, e o intervalo
 
 \subsection{Objetivos do trabalho} 
 
-O trabalho tem como principal objetivo o desenvolvimento de um sistema multi-agente para a gestão eficiente dos elevadores de um determinado edifício, tendo em conta o cenário descrito acima.
+O trabalho tem como principal objetivo o desenvolvimento de um sistema multi-agente para a gestão eficiente dos elevadores de um determinado edifício, tendo em conta o cenário descrito acima. Para tal, será necessária a implementação de um algoritmo que permita gerir as chamadas aos elevadores de forma a que o transporte seja feito o mais rápido possível.
 
 \subsection{Resultados esperados e forma de avaliação} 
 
 O programa irá apresentar estatísticas relativas ao desempenho dos vários elevadores, relativas ao tempo de espera máximo e mínimo, taxa de ocupação do elevador e tempo de uso/não uso do elevador.
 
-Como forma de avaliação, irá-se comparar o desempenho deste sistema multi-agente com outras estratégias de cooperação, como por exemplo um sistema tradicional em que cada elevador possui uma estratégia fixa e individual: atende o pedido o elevador que se encontre num piso mais próximo de onde foi feita a chamada. Também serão usados como forma de comparação sistemas em que existam dois botões de chamada vs teclado para indicação de piso de destino.
+Como forma de avaliação, comparar-se-á o desempenho deste sistema multi-agente com outras estratégias de cooperação, como por exemplo um sistema tradicional em que cada elevador possui uma estratégia fixa e individual: atende o pedido o elevador que se encontre num piso mais próximo de onde foi feita a chamada. Também serão usados como forma de comparação sistemas em que existam dois botões de chamada vs teclado para indicação de piso de destino.
 
 \newpage
 
@@ -135,6 +135,32 @@ Como protocolo de interação, pretendemos utilizar objetos da classe \textit{AC
 
 \subsection{Faseamento do projeto} 
 
+O trabalho será desenvolvido a partir dos seguintes pontos (os três primeiros já se encontram implementados):
+
+1. O agente "Building" deve alocar pedidos a elevadores sem possibilidade de recusa por parte do elevador.
+
+2. Configuração do sistema por parte do utilizador: número de pisos do edifício, número de elevadores e carga máxima de cada elevador.
+
+3. Elevador deve demorar um tempo pré-definido a ir de um piso a outro.
+
+4. Limitar o peso que o elevador pode transportar.
+
+5. "Building" alocar pedidos a elevadores com possibilidade de recusa por parte do elevador.
+
+6. Elevadores conseguirem comunicar entre si os seus estados para atribuir tarefas a outros elevadores.
+
+7. Melhorar a ordenação interna dos pedidos nos elevadores de forma a tornar a resposta a estes mais eficiente.
+
+8. Simular a saída das pessoas do elevador (demorando algum tempo) e receber piso de destino (até agora só recebe piso de entrada).
+
+9. Contabilizar o tempo correspondente à paragem do elevador para entrada/saída de utentes.
+
+10. Apresentar estatísticas relativas ao desempenho dos elevadores (tempos de espera máximo e mínimo, taxa de ocupação do elevador, tempo de uso e não uso do elevador).
+
+11. Permitir dois botões de chamada (subir/descer) ou teclado para indicação do piso destino.
+
+12. Comparar o desempenho com diferentes estratégias de cooperação.
+
 \newpage
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -143,7 +169,9 @@ Como protocolo de interação, pretendemos utilizar objetos da classe \textit{AC
 \subsection{Bibliografia} 
 
 Slides do Moodle sobre JADE
+
 Documentação do JADE
+
 Código fonte do JADE
 
 \subsection{Software} 
