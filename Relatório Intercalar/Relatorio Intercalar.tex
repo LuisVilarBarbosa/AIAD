@@ -61,7 +61,7 @@ O programa deve permitir que o utilizador configure o sistema, como o número de
 
 As necessidades dos utentes, como por exemplo a frequência de chamada de elevador em cada piso do edifício (devendo ser superior para o piso 0) e piso de destino, são geradas aleatoriamente. 
 
-Um elevador demora um tempo pré-definido a ir de um piso a outro, e o intervalo de tempo correspondente à paragem do elevador para entrada/saída de utentes também é contabilizado.
+Um elevador demora um tempo pré-definido a ir de um piso a outro, sendo que o intervalo de tempo correspondente à paragem do elevador para entrada/saída de utentes também é contabilizado.
 
 \subsection{Objetivos do trabalho} 
 
@@ -97,11 +97,11 @@ A comunicação pode ser feita através de notificações, RMI ou IIOP.
 O JADE possui várias ferramentas que simplificam a administração da plataforma e o desenvolvimento:
 
 \begin{itemize}
-\item RMA (Remote Monitoring Agent): Consola gráfica que permite visualizar a atividade da plataforma, bem como visualizar os \textit{containers} e o estado dos agentes.
-\item Dummy Agent: Permite interação com outros agentes, através do envio, receção e visualização de mensagens ACL.
-\item Sniffer Agent: Visualizar mensagens enviadas por/para o agente num diagrama UML. Este é informado pelo AMS quando um agente ou \textit{container} é criado/destruído.
-\item Directory Facilitator GUI: Permite que os agentes registem o seu serviço ou procurem neste.
-\item Introspector Agent: Monitoriza o ciclo de vida de um agente.
+\item \textit{RMA (Remote Monitoring Agent)}: Consola gráfica que permite visualizar a atividade da plataforma, bem como visualizar os \textit{containers} e o estado dos agentes.
+\item \textit{Dummy Agent}: Permite interação com outros agentes, através do envio, receção e visualização de mensagens ACL.
+\item \textit{Sniffer Agent}: Visualizar mensagens enviadas por/para o agente num diagrama UML. Este é informado pelo AMS quando um agente ou \textit{container} é criado/destruído.
+\item \textit{Directory Facilitator GUI}: Permite que os agentes registem o seu serviço ou procurem neste.
+\item \textit{Introspector Agent}: Monitoriza o ciclo de vida de um agente.
 \end{itemize}
 
 Nesta \textit{framework}, os agentes possuem \textit{behaviours}, que implementam as tarefas dos agentes.
@@ -112,7 +112,7 @@ De momento, e com base no código que já temos desenvolvido, é relevante o \te
 
 O facto de os agentes terem \textit{behaviours} permite-nos implementar a lógica necessária para cumprir os objetivos do trabalho.
 
-Como os agentes necessitam de partilhar informação sobre os seus estados, a comunicação através de mensagens ACL também será importante.
+Como os agentes necessitam de partilhar informação, a comunicação através de mensagens ACL também será importante.
 
 Para no fim conseguirmos avaliar os resultados, as ferramentas enumeradas anteriormente também serão importantes para comparar diferentes implementações do sistema multi-agente.
 
@@ -125,9 +125,9 @@ Para no fim conseguirmos avaliar os resultados, as ferramentas enumeradas anteri
 
 No nosso projeto, distinguem-se dois tipos de agentes: \textit{Elevator} e \textit{Building}.
 
-O \textit{Building} é um tipo de agente que fornece um serviço. Este possui um número de pisos, entre os quais um certo número de elevadores funciona. Este é responsável pela criação de outros agentes, os \textit{Elevator}. Este agente pretende simular, através do seu comportamento, os pedidos existentes num edifício por parte dos utilizadores. Desta forma, cria pedidos num certo intervalo de tempo, enviando uma mensagem ACL do tipo \textit{INFORM} para os elevadores.
+O \textit{Building} possui um número de pisos, entre os quais um certo número de elevadores funciona. Este é responsável pela criação de outros agentes, os \textit{Elevator}. Este agente pretende simular, através do seu comportamento, os pedidos existentes num edifício por parte dos utilizadores. Desta forma, cria pedidos num certo intervalo de tempo, enviando uma mensagem ACL do tipo \textit{INFORM} para os elevadores.
 
-O \textit{Elevator} é o agente que se regista no serviço fornecido pelo \textit{Building}. Possui um peso máximo, um tempo de movimento entre pisos e o seu piso atual. Cada \textit{Elevator} tem uma lista interna de pedidos a realizar, que é dinâmica, uma vez que pode ser alterada caso outros elevadores lhe atribuam um novo pedido, ou caso seja feito um novo pedido no \textit{Building}. O seu comportamento consiste em satisfazer o próximo pedido da lista, simulando o tempo de movimento até esse piso.
+O \textit{Elevator} possui um peso máximo, um tempo de movimento entre pisos e o seu piso atual. Cada \textit{Elevator} tem uma lista interna de pedidos a realizar, que é dinâmica, uma vez que pode ser alterada caso outros elevadores lhe atribuam um novo pedido, ou caso seja feito um novo pedido no \textit{Building}. O seu comportamento consiste em satisfazer o próximo pedido da lista, simulando o tempo de movimento até esse piso.
 
 \subsection{Protocolos de interação} 
 
@@ -139,17 +139,17 @@ Exemplos do conteúdo possível de uma mensagem: "5 UNKNOWN" (pedido no piso 5 c
 
 O trabalho será desenvolvido a partir dos seguintes pontos (os três primeiros já se encontram implementados):
 
-1. O agente "Building" deve alocar pedidos a elevadores sem possibilidade de recusa por parte do elevador.
+1. O agente \textit{Building} deve alocar pedidos a elevadores sem possibilidade de recusa por parte do elevador.
 
-2. Configuração do sistema por parte do utilizador: número de pisos do edifício, número de elevadores e carga máxima de cada elevador.
+2. Permitir a configuração do sistema por parte do utilizador: número de pisos do edifício, número de elevadores e carga máxima de cada elevador.
 
-3. Elevador deve demorar um tempo pré-definido a ir de um piso a outro.
+3. O elevador deve demorar um tempo pré-definido a ir de um piso a outro.
 
 4. Limitar o peso que o elevador pode transportar.
 
-5. "Building" alocar pedidos a elevadores com possibilidade de recusa por parte do elevador.
+5. O agente \textit{Building} deve alocar pedidos a elevadores com possibilidade de recusa por parte do elevador.
 
-6. Elevadores conseguirem comunicar entre si os seus estados para atribuir tarefas a outros elevadores.
+6. Os elevadores devem comunicar entre si os seus estados para atribuir tarefas a outros elevadores.
 
 7. Melhorar a ordenação interna dos pedidos nos elevadores de forma a tornar a resposta a estes mais eficiente.
 
