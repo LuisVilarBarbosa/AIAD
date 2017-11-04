@@ -127,11 +127,13 @@ No nosso projeto, distinguem-se dois tipos de agentes: \textit{Elevator} e \text
 
 O \textit{Building} é um tipo de agente que fornece um serviço. Este possui um número de pisos, entre os quais um certo número de elevadores funciona. Este é responsável pela criação de outros agentes, os \textit{Elevator}. Este agente pretende simular, através do seu comportamento, os pedidos existentes num edifício por parte dos utilizadores. Desta forma, cria pedidos num certo intervalo de tempo, enviando uma mensagem ACL do tipo \textit{INFORM} para os elevadores.
 
-O \textit{Elevator} é o agente que se regista no serviço fornecido pelo \textit{Building}. Possui um peso máximo, um tempo de movimento entre pisos e o seu andar atual. Cada \textit{Elevator} tem uma lista interna de pedidos a realizar, que é dinâmica, uma vez que pode ser alterada caso outros elevadores lhe atribuam um novo pedido, ou caso seja feito um novo pedido no \textit{Building}. O seu comportamento consiste em satisfazer o próximo pedido da lista, simulando o tempo de movimento até esse piso.
+O \textit{Elevator} é o agente que se regista no serviço fornecido pelo \textit{Building}. Possui um peso máximo, um tempo de movimento entre pisos e o seu piso atual. Cada \textit{Elevator} tem uma lista interna de pedidos a realizar, que é dinâmica, uma vez que pode ser alterada caso outros elevadores lhe atribuam um novo pedido, ou caso seja feito um novo pedido no \textit{Building}. O seu comportamento consiste em satisfazer o próximo pedido da lista, simulando o tempo de movimento até esse piso.
 
 \subsection{Protocolos de interação} 
 
-Como protocolo de interação, pretendemos utilizar objetos da classe \textit{ACLMessage} com \textit{performative} relacionado com o tipo de informação enviada (proposta, informação, aceitação de proposta...) e conteúdo correspondente a uma \textit{string} com o andar onde foi feito o pedido.
+Como protocolo de interação, pretendemos utilizar objetos da classe \textit{ACLMessage} com \textit{performative} relacionado com o tipo de informação enviada (proposta, informação, aceitação de proposta...) e conteúdo correspondente a uma \textit{string} com o piso onde foi feito o pedido e o destino previsto, que pode ser desconhecido, uma direção ou um piso de destino.
+
+Exemplos do conteúdo possível de uma mensagem: "5 UNKNOWN" (pedido no piso 5 com destino desconhecido), "5 UP" (pedido no piso 5 com destino previsto para cima), "5 DOWN" (pedido no piso 5 com destino previsto para baixo), "5 4" (pedido no piso 5 com piso 4 como destino).
 
 \subsection{Faseamento do projeto} 
 
