@@ -125,9 +125,9 @@ Para no fim conseguirmos avaliar os resultados, as ferramentas enumeradas anteri
 
 No nosso projeto, distinguem-se dois tipos de agentes: \textit{Elevator} e \textit{Building}.
 
-O \textit{Building} possui um número de pisos, entre os quais um certo número de elevadores funciona. Este é responsável pela criação de outros agentes, os \textit{Elevator}. Este agente pretende simular, através do seu comportamento, os pedidos existentes num edifício por parte dos utilizadores. Desta forma, cria pedidos num certo intervalo de tempo, enviando uma mensagem ACL do tipo \textit{INFORM} para os elevadores.
+O \textit{Building} possui um número de pisos, entre os quais um certo número de elevadores funciona. Este é responsável pela criação de outros agentes, os \textit{Elevator}, e também subscreve o serviço disponibilizado pelo \textit{Directory Facilitator} de forma a receber a informação. Este agente pretende simular, através do seu comportamento, os pedidos existentes num edifício por parte dos utilizadores. Desta forma, cria pedidos num certo intervalo de tempo, enviando uma mensagem ACL do tipo \textit{INFORM} para os elevadores.
 
-O \textit{Elevator} possui um peso máximo, um tempo de movimento entre pisos e o seu piso atual. Cada \textit{Elevator} tem uma lista interna de pedidos a realizar, que é dinâmica, uma vez que pode ser alterada caso outros elevadores lhe atribuam um novo pedido, ou caso seja feito um novo pedido no \textit{Building}. O seu comportamento consiste em satisfazer o próximo pedido da lista, simulando o tempo de movimento até esse piso.
+O \textit{Elevator} regista-se no serviço do \textit{Directory Facilitator} de forma a que o \textit{Building} (ou outros que subscrevam) saiba que este existe. Possui um peso máximo, um tempo de movimento entre pisos e o seu piso atual. Cada \textit{Elevator} tem uma lista interna de pedidos a realizar, que é dinâmica, uma vez que pode ser alterada caso outros elevadores lhe atribuam um novo pedido, ou caso seja feito um novo pedido no \textit{Building}. O seu comportamento consiste em satisfazer o próximo pedido da lista, simulando o tempo de movimento até esse piso.
 
 \subsection{Protocolos de interação} 
 
