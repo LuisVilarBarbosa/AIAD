@@ -47,25 +47,27 @@ public class Elevator extends Agent {
 		public void action() {
 			if (!internalRequests.isEmpty()) {
 				int nextFloor = getAndRemoveClosestTo(actualFloor);
+				int nextActualWeight;
 				int attempt = 0;
 				do {
-					int freq = random.nextInt() % 100;
 					int nPeople = 1 + random.nextInt() % (maxWeight/75);
 					int newWeight = 0;
 					for(int i = 0; i < nPeople; i++) {
 						int n = random.nextInt() % 41;
 						newWeight += (60 + n);
 					}
+                    int freq = random.nextInt() % 100;
 					if(freq == 0)
-						newWeight += 20 + random.nextInt() % 80;
+						newWeight += 20 + random.nextInt() % 81;
 					int in_out = random.nextInt() % 2;
 					if(in_out == 1)
 						newWeight = -newWeight;
-					actualWeight += newWeight;
+                    nextActualWeight = actualWeight + newWeight;
 					if(attempt>0)
 					System.out.println(attempt);
 					attempt++;
-				} while(actualWeight < 0 || actualWeight > maxWeight);
+				} while(nextActualWeight < 0 || nextActualWeight > maxWeight);
+				actualWeight = nextActualWeight;
 				
 				System.out.println("Agent: " + this.getAgent().getAID().getLocalName() + " Floor: " + nextFloor + " AW: " + actualWeight + " MW: " + maxWeight);
 				try {
