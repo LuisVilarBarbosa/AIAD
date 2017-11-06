@@ -74,7 +74,7 @@ public class Building extends Agent {
 
 		@Override
 		public void action() {
-			int n = random.nextInt() % 50;
+			int n = random.nextInt() % (3*numElevators);
 			for (int i = 0; i < n; i++) {
                 int rand = Math.abs(random.nextInt() % (numFloors * 2));
                 if (rand > numFloors)

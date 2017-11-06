@@ -14,6 +14,8 @@ public class Elevator extends Agent {
 	private int maxWeight;  // not in use
 	private int moveTime = 20;
 	private int actualFloor = 0;
+	private int actualWeight = 0;
+	private Random random = new Random();
 
 	private TreeSet<Integer> internalRequests = new TreeSet<>();
 
@@ -45,7 +47,27 @@ public class Elevator extends Agent {
 		public void action() {
 			if (!internalRequests.isEmpty()) {
 				int nextFloor = getAndRemoveClosestTo(actualFloor);
-				System.out.println("Agent: " + this.getAgent().getAID() + " Floor: " + nextFloor);
+				int attempt = 0;
+				do {
+					int freq = random.nextInt() % 100;
+					int nPeople = 1 + random.nextInt() % (maxWeight/75);
+					int newWeight = 0;
+					for(int i = 0; i < nPeople; i++) {
+						int n = random.nextInt() % 41;
+						newWeight += (60 + n);
+					}
+					if(freq == 0)
+						newWeight += 20 + random.nextInt() % 80;
+					int in_out = random.nextInt() % 2;
+					if(in_out == 1)
+						newWeight = -newWeight;
+					actualWeight += newWeight;
+					if(attempt>0)
+					System.out.println(attempt);
+					attempt++;
+				} while(actualWeight < 0 || actualWeight > maxWeight);
+				
+				System.out.println("Agent: " + this.getAgent().getAID().getLocalName() + " Floor: " + nextFloor + " AW: " + actualWeight + " MW: " + maxWeight);
 				try {
 					Thread.sleep(moveTime * Math.abs(nextFloor - actualFloor));
 				} catch (InterruptedException e) {
