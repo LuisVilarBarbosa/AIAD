@@ -1,6 +1,8 @@
+import com.sun.org.apache.regexp.internal.RE;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.domain.DFService;
+import jade.domain.FIPAAgentManagement.UnexpectedParameter;
 import jade.domain.FIPAException;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
@@ -8,6 +10,7 @@ import jade.lang.acl.ACLMessage;
 
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
 public class Elevator extends Agent {
@@ -17,7 +20,7 @@ public class Elevator extends Agent {
 	private int actualWeight = 0;
 	private Random random = new Random();
 
-	private TreeSet<Integer> internalRequests = new TreeSet<>();
+	private TreeMap<Integer, Boolean> internalRequests = new TreeMap<>();
 
 	public Elevator(int maxWeight) {
 		super();
@@ -80,13 +83,28 @@ public class Elevator extends Agent {
 			ACLMessage msg;
 			while((msg = receive()) != null){
 				System.out.println(this.getAgent().getName() + " msg: " + msg.getContent());
-				internalRequests.add(Integer.parseInt(msg.getContent()));
+				if(msg.getSender().getName().equalsIgnoreCase("Building")) {
+					if (actualFloor == Integer.parseInt(msg.getContent()))
+						internalRequests.put(Integer.parseInt(msg.getContent()), true);
+					else
+						internalRequests.put(Integer.parseInt(msg.getContent()), false);
+				}
+				else if(msg.getSender().getName().equalsIgnoreCase("Elevator")) {
+					String[] splittedMsg = msg.getContent().split(" ");
+					if(splittedMsg.length != 2)
+						System.err.println("Invalid message content.");
+					int source = Integer.parseInt(splittedMsg[0]);
+					int destination = Integer.parseInt(splittedMsg[1]);
+					// fiquei aqui
+				}
+				else
+					System.err.println("Invalid agent.");
 			}
 		}
 
         private int getAndRemoveClosestTo(int number) {
-            Integer floor = internalRequests.floor(number - 1);
-            Integer higher = internalRequests.higher(number);
+            Integer floor = internalRequests.floorKey(number - 1);
+            Integer higher = internalRequests.higherKey(number);
 
             Integer closest;
             if (floor == null)

@@ -20,7 +20,7 @@ public class Building extends Agent {
 	private Random random = new Random();
 
 	private ArrayList<AID> elevators = new ArrayList();
-	private ArrayList<Integer> externalRequests = new ArrayList<>();
+	private ArrayList<Request> externalRequests = new ArrayList<>();
 
 	private ArrayList<DFAgentDescription> descriptions = new ArrayList();
 
@@ -67,7 +67,7 @@ public class Building extends Agent {
 	private void addRequest(int floor) {
 		if (floor < 0 || floor > numFloors)
 			throw new IllegalArgumentException("Invalid floor.");
-		externalRequests.add(floor);
+		externalRequests.add(new Request(floor, false));
 	}
 
 	private class BuildingBehaviour extends CyclicBehaviour {
@@ -82,10 +82,10 @@ public class Building extends Agent {
                 else
                     addRequest(rand);
             }
-			for (int externalRequest : externalRequests) {
+			for (Request externalRequest : externalRequests) {
                 ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
                 msg.addReceiver(elevators.get(random.nextInt(elevators.size())));
-                msg.setContent(Integer.toString(externalRequest));
+                msg.setContent(Integer.toString(externalRequest.getDestination()));
                 send(msg);
 			}
 			try {
