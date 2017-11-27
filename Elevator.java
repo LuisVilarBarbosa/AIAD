@@ -1,26 +1,23 @@
-import com.sun.org.apache.regexp.internal.RE;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.domain.DFService;
-import jade.domain.FIPAAgentManagement.UnexpectedParameter;
-import jade.domain.FIPAException;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
+import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
 
-import java.util.ArrayList;
 import java.util.Random;
-import java.util.TreeMap;
 import java.util.TreeSet;
 
 public class Elevator extends Agent {
+    public static String agentType = "Elevator";
 	private int maxWeight;  // not in use
 	private int moveTime = 20;
 	private int actualFloor = 0;
 	private int actualWeight = 0;
 	private Random random = new Random();
 
-	private TreeMap<Integer, Boolean> internalRequests = new TreeMap<>();
+    private TreeSet<Request> internalRequests = new TreeSet<>();
 
 	public Elevator(int maxWeight) {
 		super();
@@ -35,7 +32,7 @@ public class Elevator extends Agent {
 		dfd.setName(getAID());
 		ServiceDescription sd = new ServiceDescription();
 		sd.setName(getName());
-		sd.setType("Agent");
+		sd.setType(agentType);
 		dfd.addServices(sd);
 		try {
 			DFService.register(this, dfd);
@@ -71,7 +68,7 @@ public class Elevator extends Agent {
 					attempt++;
 				} while(nextActualWeight < 0 || nextActualWeight > maxWeight);
 				actualWeight = nextActualWeight;
-				
+
 				System.out.println("Agent: " + this.getAgent().getAID().getLocalName() + " Floor: " + nextFloor + " AW: " + actualWeight + " MW: " + maxWeight);
 				try {
 					Thread.sleep(moveTime * Math.abs(nextFloor - actualFloor));
@@ -83,13 +80,13 @@ public class Elevator extends Agent {
 			ACLMessage msg;
 			while((msg = receive()) != null){
 				System.out.println(this.getAgent().getName() + " msg: " + msg.getContent());
-				if(msg.getSender().getName().equalsIgnoreCase("Building")) {
-					if (actualFloor == Integer.parseInt(msg.getContent()))
-						internalRequests.put(Integer.parseInt(msg.getContent()), true);
-					else
-						internalRequests.put(Integer.parseInt(msg.getContent()), false);
+				if(msg.getSender().getLocalName().startsWith(Building.agentType)) {
+				    Request request = new Request(Integer.parseInt(msg.getContent()));
+					if (actualFloor == request.getSource())
+						request.setAttentded();
+                    internalRequests.add(request);
 				}
-				else if(msg.getSender().getName().equalsIgnoreCase("Elevator")) {
+				else if(msg.getSender().getLocalName().startsWith(Elevator.agentType)) {
 					String[] splittedMsg = msg.getContent().split(" ");
 					if(splittedMsg.length != 2)
 						System.err.println("Invalid message content.");
@@ -103,15 +100,15 @@ public class Elevator extends Agent {
 		}
 
         private int getAndRemoveClosestTo(int number) {
-            Integer floor = internalRequests.floorKey(number - 1);
-            Integer higher = internalRequests.higherKey(number);
+            Request floor = internalRequests.floor(new Request(number - 1));
+            Request higher = internalRequests.higher(new Request(number));
 
-            Integer closest;
+            Request closest;
             if (floor == null)
                 closest = higher;
             else if (higher == null)
                 closest = floor;
-            else if (number - floor < higher - number)
+            else if (number - (floor.isAttended() ? floor.getDestination() : floor.getSource()) < (higher.isAttended() ? higher.getDestination() : higher.getSource()) - number)
                 closest = floor;
             else
                 closest = higher;
@@ -120,7 +117,7 @@ public class Elevator extends Agent {
                 return number;
             else {
                 internalRequests.remove(closest);
-                return closest;
+                return closest.isAttended() ? closest.getDestination() : closest.getSource();
             }
         }
 	}

@@ -1,26 +1,29 @@
-import java.util.ArrayList;
-import java.util.Random;
-
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.Behaviour;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.domain.DFService;
-import jade.domain.FIPAException;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
+import jade.domain.FIPAAgentManagement.ServiceDescription;
+import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
 import jade.proto.SubscriptionInitiator;
 import jade.wrapper.AgentController;
 import jade.wrapper.StaleProxyException;
 
+import java.util.ArrayList;
+import java.util.Random;
+import java.util.TreeSet;
+
 public class Building extends Agent {
+    public static String agentType = "Building";
 	private int numFloors;
 	private int numElevators;
 	private ArrayList<Integer> maxWeights;
 	private Random random = new Random();
 
 	private ArrayList<AID> elevators = new ArrayList();
-	private ArrayList<Request> externalRequests = new ArrayList<>();
+    private TreeSet<Request> externalRequests = new TreeSet<>();
 
 	private ArrayList<DFAgentDescription> descriptions = new ArrayList();
 
@@ -33,9 +36,9 @@ public class Building extends Agent {
 	}
 
 	protected void setup() {
-		DFAgentDescription template = new DFAgentDescription();
+		DFAgentDescription dfd = new DFAgentDescription();
 		Behaviour b = new SubscriptionInitiator(
-				this, DFService.createSubscriptionMessage(this, getDefaultDF(), template, null)) {
+                this, DFService.createSubscriptionMessage(this, getDefaultDF(), dfd, null)) {
 			protected void handleInform(ACLMessage inform) {
 				try {
 					DFAgentDescription[] dfds = DFService.decodeNotification(inform.getContent());
@@ -43,7 +46,6 @@ public class Building extends Agent {
 						descriptions.add(d);
                         System.out.println("Agent " + d.getName().getName() + " created by building.");
 					}
-
 				} catch (FIPAException e) {
 					e.printStackTrace();
 				}
@@ -67,7 +69,9 @@ public class Building extends Agent {
 	private void addRequest(int floor) {
 		if (floor < 0 || floor > numFloors)
 			throw new IllegalArgumentException("Invalid floor.");
-		externalRequests.add(new Request(floor, false));
+		Request request = new Request(floor);
+		if(!externalRequests.contains(request))
+		    externalRequests.add(request);
 	}
 
 	private class BuildingBehaviour extends CyclicBehaviour {
@@ -82,10 +86,11 @@ public class Building extends Agent {
                 else
                     addRequest(rand);
             }
-			for (Request externalRequest : externalRequests) {
+			for (Request request : externalRequests) {
                 ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
+                msg.setSender(this.getAgent().getAID());
                 msg.addReceiver(elevators.get(random.nextInt(elevators.size())));
-                msg.setContent(Integer.toString(externalRequest.getDestination()));
+                msg.setContent(Integer.toString(request.getSource()));
                 send(msg);
 			}
 			try {
