@@ -43,7 +43,7 @@ public class Building extends Agent {
 					DFAgentDescription[] dfds = DFService.decodeNotification(inform.getContent());
 					for(DFAgentDescription d: dfds) {
 						descriptions.add(d);
-                        System.out.println("Agent " + d.getName().getName() + " created by building.");
+                        //System.out.println("Agent " + d.getName().getName() + " created by building.");
 					}
 				} catch (FIPAException e) {
 					e.printStackTrace();
@@ -54,7 +54,7 @@ public class Building extends Agent {
 		addBehaviour(b);
 		for(int i = 0; i < numElevators; i++)
 			try {
-		        Elevator elevator = new Elevator(maxWeights.get(i));
+		        Elevator elevator = new Elevator(maxWeights.get(i), numFloors);
 				AgentController ac = this.getContainerController().acceptNewAgent("Elevator"+i, elevator);
 				ac.start();
 				elevators.add(elevator.getAID());
@@ -89,6 +89,7 @@ public class Building extends Agent {
                 ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
                 msg.setSender(this.getAgent().getAID());
                 msg.addReceiver(elevators.get(random.nextInt(elevators.size())));
+                msg.setProtocol(agentType);
                 msg.setContent(Integer.toString(request.getSource()));
                 send(msg);
 			}
