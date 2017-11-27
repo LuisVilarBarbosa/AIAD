@@ -4,7 +4,6 @@ import jade.core.behaviours.Behaviour;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
-import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
 import jade.proto.SubscriptionInitiator;
@@ -93,6 +92,7 @@ public class Building extends Agent {
                 msg.setContent(Integer.toString(request.getSource()));
                 send(msg);
 			}
+			externalRequests.clear();
 			try {
 				Thread.sleep(10000);
 			} catch (InterruptedException e) {

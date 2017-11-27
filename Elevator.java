@@ -83,7 +83,7 @@ public class Elevator extends Agent {
 				if(msg.getSender().getLocalName().startsWith(Building.agentType)) {
 				    Request request = new Request(Integer.parseInt(msg.getContent()));
 					if (actualFloor == request.getSource())
-						request.setAttentded();
+						request.setAttended();
                     internalRequests.add(request);
 				}
 				else if(msg.getSender().getLocalName().startsWith(Elevator.agentType)) {

@@ -1,5 +1,3 @@
-import java.util.Comparator;
-
 public class Request implements Comparable {
     private int source;
     private int destination;
@@ -13,7 +11,7 @@ public class Request implements Comparable {
         this.destination = destination;
     }
 
-    public void setAttentded() {
+    public void setAttended() {
         this.attended = true;
     }
 
