@@ -196,10 +196,8 @@ public class Elevator extends Agent {
 
             protected ACLMessage handleCfp(ACLMessage cfp) throws NotUnderstoodException, RefuseException {
                 System.out.println("Agent " + getLocalName() + ": CFP received from " + cfp.getSender().getName() + ". Action is " + cfp.getContent());
-                String[] splittedMsg = cfp.getContent().split(" ");
-                if (splittedMsg.length != 1 && splittedMsg.length != 2)
-                    throw new NotUnderstoodException("Invalid message content.");
-                int newSourceFloor = Integer.parseInt(splittedMsg[0]);
+                Request request = new Request(cfp.getContent());
+                int newSourceFloor = request.getSource();
                 double proposal = Math.abs(actualFloor - newSourceFloor) / (double) numFloors;
                 if (proposal <= 0.25) {
                     // We provide a proposal
