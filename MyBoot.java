@@ -66,7 +66,7 @@ public class MyBoot extends Boot {
                 int numFloors = Integer.parseInt(p.getParameter("numFloors", "3"));
                 int numElevators = Integer.parseInt(p.getParameter("numElevators", "5"));
                 ArrayList<Integer> maxWeights = new ArrayList<>();
-                for(int i = 1; i <= numElevators; i++)
+                for (int i = 1; i <= numElevators; i++)
                     maxWeights.add(Integer.parseInt(p.getParameter("maxWeight" + i, "500")));
 
                 AgentController ac = containerController.acceptNewAgent("Building", new Building(numFloors, numElevators, maxWeights));

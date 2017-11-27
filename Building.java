@@ -16,89 +16,89 @@ import java.util.TreeSet;
 
 public class Building extends Agent {
     public static String agentType = "Building";
-	private int numFloors;
-	private int numElevators;
-	private ArrayList<Integer> maxWeights;
-	private Random random = new Random();
+    private int numFloors;
+    private int numElevators;
+    private ArrayList<Integer> maxWeights;
+    private Random random = new Random();
 
-	private ArrayList<AID> elevators = new ArrayList();
+    private ArrayList<AID> elevators = new ArrayList();
     private TreeSet<Request> externalRequests = new TreeSet<>();
 
-	private ArrayList<DFAgentDescription> descriptions = new ArrayList();
+    private ArrayList<DFAgentDescription> descriptions = new ArrayList();
 
-	public Building(int numFloors, int numElevators, ArrayList<Integer> maxWeights) {
-        if(maxWeights.size() != numElevators)
-            throw  new IllegalArgumentException();
+    public Building(int numFloors, int numElevators, ArrayList<Integer> maxWeights) {
+        if (maxWeights.size() != numElevators)
+            throw new IllegalArgumentException();
         this.numFloors = numFloors;
         this.numElevators = numElevators;
         this.maxWeights = maxWeights;
-	}
+    }
 
-	protected void setup() {
-		DFAgentDescription dfd = new DFAgentDescription();
-		Behaviour b = new SubscriptionInitiator(
+    protected void setup() {
+        DFAgentDescription dfd = new DFAgentDescription();
+        Behaviour b = new SubscriptionInitiator(
                 this, DFService.createSubscriptionMessage(this, getDefaultDF(), dfd, null)) {
-			protected void handleInform(ACLMessage inform) {
-				try {
-					DFAgentDescription[] dfds = DFService.decodeNotification(inform.getContent());
-					for(DFAgentDescription d: dfds) {
-						descriptions.add(d);
+            protected void handleInform(ACLMessage inform) {
+                try {
+                    DFAgentDescription[] dfds = DFService.decodeNotification(inform.getContent());
+                    for (DFAgentDescription d : dfds) {
+                        descriptions.add(d);
                         //System.out.println("Agent " + d.getName().getName() + " created by building.");
-					}
-				} catch (FIPAException e) {
-					e.printStackTrace();
-				}
+                    }
+                } catch (FIPAException e) {
+                    e.printStackTrace();
+                }
 
-			}
-		};
-		addBehaviour(b);
-		for(int i = 0; i < numElevators; i++)
-			try {
-		        Elevator elevator = new Elevator(maxWeights.get(i), numFloors);
-				AgentController ac = this.getContainerController().acceptNewAgent("Elevator"+i, elevator);
-				ac.start();
-				elevators.add(elevator.getAID());
-			} catch (StaleProxyException e) {
-				e.printStackTrace();
-			}
+            }
+        };
+        addBehaviour(b);
+        for (int i = 0; i < numElevators; i++)
+            try {
+                Elevator elevator = new Elevator(maxWeights.get(i), numFloors);
+                AgentController ac = this.getContainerController().acceptNewAgent("Elevator" + i, elevator);
+                ac.start();
+                elevators.add(elevator.getAID());
+            } catch (StaleProxyException e) {
+                e.printStackTrace();
+            }
 
-		this.addBehaviour(new BuildingBehaviour());
-	}
+        this.addBehaviour(new BuildingBehaviour());
+    }
 
-	private void addRequest(int floor) {
-		if (floor < 0 || floor > numFloors)
-			throw new IllegalArgumentException("Invalid floor.");
-		Request request = new Request(floor);
-		if(!externalRequests.contains(request))
-		    externalRequests.add(request);
-	}
+    private void addRequest(int floor) {
+        if (floor < 0 || floor > numFloors)
+            throw new IllegalArgumentException("Invalid floor.");
+        Request request = new Request(floor);
+        if (!externalRequests.contains(request))
+            externalRequests.add(request);
+    }
 
-	private class BuildingBehaviour extends CyclicBehaviour {
+    private class BuildingBehaviour extends CyclicBehaviour {
 
-		@Override
-		public void action() {
-			int n = random.nextInt() % (3*numElevators);
-			for (int i = 0; i < n; i++) {
+        @Override
+        public void action() {
+            int n = random.nextInt() % (3 * numElevators);
+            for (int i = 0; i < n; i++) {
                 int rand = Math.abs(random.nextInt() % (numFloors * 2));
                 if (rand > numFloors)
                     addRequest(0);
                 else
                     addRequest(rand);
             }
-			for (Request request : externalRequests) {
+            for (Request request : externalRequests) {
                 ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
                 msg.setSender(this.getAgent().getAID());
                 msg.addReceiver(elevators.get(random.nextInt(elevators.size())));
                 msg.setProtocol(agentType);
                 msg.setContent(Integer.toString(request.getSource()));
                 send(msg);
-			}
-			externalRequests.clear();
-			try {
-				Thread.sleep(10000);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-	}
+            }
+            externalRequests.clear();
+            try {
+                Thread.sleep(10000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 }
