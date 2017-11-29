@@ -19,7 +19,7 @@ public class Elevator extends Agent {
     public static String agentType = "Elevator";
     private int maxWeight;
     private int numFloors;
-    private int moveTime = 20;
+    private int moveTime = 1000;
     private int actualFloor = 0;
     private int actualWeight = 0;
     private Random random = new Random();
@@ -103,7 +103,7 @@ public class Elevator extends Agent {
                 ACLMessage aclMessage = new ACLMessage(ACLMessage.INFORM);
                 aclMessage.setProtocol(FIPANames.InteractionProtocol.FIPA_CONTRACT_NET);
                 aclMessage.setSender(myAgent.getAID());
-                for (int i = 0; i < 3; i++)
+                for (int i = 0; i < nResponders; i++)
                     if (!myAgent.getAID().getLocalName().equals(Elevator.agentType + i))
                         aclMessage.addReceiver(myAgent.getAID(Elevator.agentType + i));
                 Request requestToSend = internalRequests.last();
@@ -113,11 +113,12 @@ public class Elevator extends Agent {
                 ElevatorMessage elevatorMessage = new ElevatorMessage(source, destination, distanceToSource);
                 aclMessage.setContent(elevatorMessage.toString());
                 setupContractNetInitiatorBehaviour(aclMessage);
+                System.out.println(myAgent.getAID().getLocalName() + " informing " + elevatorMessage.toString());
             }
         }
 
         private int getAndRemoveClosestTo(int number) {
-            Request floor = internalRequests.floor(new Request(number - 1));
+            Request floor = internalRequests.floor(new Request(number));    // can find a request with 'source' equal to 'number'
             Request higher = internalRequests.higher(new Request(number));
 
             Request closest;
@@ -178,9 +179,9 @@ public class Elevator extends Agent {
                         ACLMessage reply = msg.createReply();
                         reply.setPerformative(ACLMessage.REJECT_PROPOSAL);
                         acceptances.addElement(reply);
-                        int proposal = Integer.parseInt(msg.getContent());
-                        if (proposal > bestProposal) {
-                            bestProposal = proposal;
+                        ElevatorMessage proposal = new ElevatorMessage(msg.getContent());
+                        if (proposal.getDistanceToSource() <= bestProposal) {
+                            bestProposal = proposal.getDistanceToSource();
                             bestProposer = msg.getSender();
                             accept = reply;
                         }
@@ -205,15 +206,16 @@ public class Elevator extends Agent {
 
             protected ACLMessage handleCfp(ACLMessage cfp) throws NotUnderstoodException, RefuseException {
                 System.out.println("Agent " + getLocalName() + ": CFP received from " + cfp.getSender().getName() + ". Action is " + cfp.getContent());
-                int newSourceFloor = new ElevatorMessage(cfp.getContent()).getSource();
-                double proposal = Math.abs(actualFloor - newSourceFloor) / (double) numFloors;
-                if (proposal <= 0.25) {
+                ElevatorMessage proposedRequest = new ElevatorMessage(cfp.getContent());
+                int myDistanceToDo = Math.abs(actualFloor - proposedRequest.getSource());
+                if (myDistanceToDo <= proposedRequest.getDistanceToSource()) {
                     // We provide a proposal
-                    System.out.println("Agent " + getLocalName() + ": Proposing " + proposal);
+                    System.out.println("Agent " + getLocalName() + ": Proposing " + myDistanceToDo);
                     ACLMessage propose = cfp.createReply();
                     propose.setPerformative(ACLMessage.PROPOSE);
                     propose.setProtocol(FIPANames.InteractionProtocol.FIPA_CONTRACT_NET);
-                    propose.setContent(String.valueOf(newSourceFloor));
+                    ElevatorMessage myPropose = new ElevatorMessage(proposedRequest.getSource(), proposedRequest.getDestination(), myDistanceToDo);
+                    propose.setContent(myPropose.toString());
                     return propose;
                 } else {
                     // We refuse to provide a proposal
