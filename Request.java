@@ -5,6 +5,7 @@ public class Request implements Comparable {
 
     public Request(int source) {
         this.source = source;
+        this.destination = this.source; // assumption
         this.attended = false;
     }
 
@@ -15,6 +16,8 @@ public class Request implements Comparable {
         this.source = Integer.parseInt(splittedVars[0]);
         if (splittedVars.length > 1)
             this.destination = Integer.parseInt(splittedVars[1]);
+        else
+            this.destination = this.source; // assumption
         this.attended = false;
 
     }

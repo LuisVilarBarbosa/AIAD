@@ -1,24 +1,17 @@
 public class ElevatorMessage {
     private int source;
-    private Integer destination;
+    private int destination;
     private int distanceToSource;
     private static final String separator = " ";
 
     public static ElevatorMessage parseMessage(String message) {
         String[] parts = message.split(separator);
-        if(parts.length == 2){
-            int source = Integer.parseInt(parts[0]);
-            Integer destination = null;
-            int distanceToSource = Integer.parseInt(parts[1]);
-            return new ElevatorMessage(source, destination, distanceToSource);
-        }
-        else if(parts.length == 3){
+        if (parts.length == 3) {
             int source = Integer.parseInt(parts[0]);
             int destination = Integer.parseInt(parts[1]);
             int distanceToSource = Integer.parseInt(parts[2]);
             return new ElevatorMessage(source, destination, distanceToSource);
-        }
-        else
+        } else
             throw new IllegalArgumentException("Invalid format for message");
     }
 
@@ -42,6 +35,6 @@ public class ElevatorMessage {
 
     @Override
     public String toString() {
-        return source + separator + (destination != null ? destination + separator : "") + distanceToSource;
+        return source + separator + destination + separator + distanceToSource;
     }
 }
