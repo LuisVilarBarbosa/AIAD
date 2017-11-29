@@ -4,18 +4,17 @@ public class ElevatorMessage {
     private int distanceToSource;
     private static final String separator = " ";
 
-    public static ElevatorMessage parseMessage(String message) {
+    public ElevatorMessage(String message) {
         String[] parts = message.split(separator);
         if (parts.length == 3) {
-            int source = Integer.parseInt(parts[0]);
-            int destination = Integer.parseInt(parts[1]);
-            int distanceToSource = Integer.parseInt(parts[2]);
-            return new ElevatorMessage(source, destination, distanceToSource);
+            this.source = Integer.parseInt(parts[0]);
+            this.destination = Integer.parseInt(parts[1]);
+            this.distanceToSource = Integer.parseInt(parts[2]);
         } else
             throw new IllegalArgumentException("Invalid format for message");
     }
 
-    private ElevatorMessage(int source, int destination, int distanceToSource) {
+    public ElevatorMessage(int source, int destination, int distanceToSource) {
         this.source = source;
         this.destination = destination;
         this.distanceToSource = distanceToSource;

@@ -54,14 +54,6 @@ public class Elevator extends Agent {
 
         @Override
         public void action() {
-            ACLMessage aclMessage = new ACLMessage(ACLMessage.INFORM);
-            aclMessage.setProtocol(FIPANames.InteractionProtocol.FIPA_CONTRACT_NET);
-            aclMessage.setSender(myAgent.getAID());
-            for (int i = 0; i < 3; i++)
-                aclMessage.addReceiver(myAgent.getAID(Elevator.agentType + i));
-            aclMessage.setContent("5");
-            setupContractNetInitiatorBehaviour(aclMessage);
-
             if (!internalRequests.isEmpty()) {
                 int nextFloor = getAndRemoveClosestTo(actualFloor);
                 int nextActualWeight;
@@ -104,6 +96,23 @@ public class Elevator extends Agent {
                     internalRequests.add(request);
                 } else
                     System.err.println("Invalid agent.");
+            }
+
+            if(!internalRequests.isEmpty()) {
+                // TODO While setting the negotiation we need to implement a way to temporarily lock the request, so this is not attended.
+                ACLMessage aclMessage = new ACLMessage(ACLMessage.INFORM);
+                aclMessage.setProtocol(FIPANames.InteractionProtocol.FIPA_CONTRACT_NET);
+                aclMessage.setSender(myAgent.getAID());
+                for (int i = 0; i < 3; i++)
+                    if (!myAgent.getAID().getLocalName().equals(Elevator.agentType + i))
+                        aclMessage.addReceiver(myAgent.getAID(Elevator.agentType + i));
+                Request requestToSend = internalRequests.last();
+                int source = requestToSend.getSource();
+                int destination = requestToSend.getDestination();
+                int distanceToSource = Math.abs(((Elevator) myAgent).actualFloor - requestToSend.getSource());
+                ElevatorMessage elevatorMessage = new ElevatorMessage(source, destination, distanceToSource);
+                aclMessage.setContent(elevatorMessage.toString());
+                setupContractNetInitiatorBehaviour(aclMessage);
             }
         }
 
@@ -196,8 +205,7 @@ public class Elevator extends Agent {
 
             protected ACLMessage handleCfp(ACLMessage cfp) throws NotUnderstoodException, RefuseException {
                 System.out.println("Agent " + getLocalName() + ": CFP received from " + cfp.getSender().getName() + ". Action is " + cfp.getContent());
-                Request request = new Request(cfp.getContent());
-                int newSourceFloor = request.getSource();
+                int newSourceFloor = new ElevatorMessage(cfp.getContent()).getSource();
                 double proposal = Math.abs(actualFloor - newSourceFloor) / (double) numFloors;
                 if (proposal <= 0.25) {
                     // We provide a proposal
