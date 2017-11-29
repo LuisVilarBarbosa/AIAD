@@ -15,7 +15,7 @@ import java.util.Random;
 import java.util.TreeSet;
 
 public class Building extends Agent {
-    public static String agentType = "Building";
+    public static final String agentType = "Building";
     private int numFloors;
     private int numElevators;
     private ArrayList<Integer> maxWeights;
@@ -35,6 +35,7 @@ public class Building extends Agent {
     }
 
     protected void setup() {
+        super.setup();
         DFAgentDescription dfd = new DFAgentDescription();
         Behaviour b = new SubscriptionInitiator(
                 this, DFService.createSubscriptionMessage(this, getDefaultDF(), dfd, null)) {
@@ -55,7 +56,7 @@ public class Building extends Agent {
         for (int i = 0; i < numElevators; i++)
             try {
                 Elevator elevator = new Elevator(maxWeights.get(i), numFloors);
-                AgentController ac = this.getContainerController().acceptNewAgent("Elevator" + i, elevator);
+                AgentController ac = this.getContainerController().acceptNewAgent(Elevator.agentType + i, elevator);
                 ac.start();
                 elevators.add(elevator.getAID());
             } catch (StaleProxyException e) {

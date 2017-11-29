@@ -69,8 +69,10 @@ public class MyBoot extends Boot {
                 for (int i = 1; i <= numElevators; i++)
                     maxWeights.add(Integer.parseInt(p.getParameter("maxWeight" + i, "500")));
 
-                AgentController ac = containerController.acceptNewAgent("Building", new Building(numFloors, numElevators, maxWeights));
+                AgentController ac = containerController.acceptNewAgent(Building.agentType, new Building(numFloors, numElevators, maxWeights));
                 ac.start();
+                AgentController ac2 = containerController.acceptNewAgent(MyInterface.agentType, new MyInterface());
+                ac2.start();
             } catch (StaleProxyException e) {
                 e.printStackTrace();
             }

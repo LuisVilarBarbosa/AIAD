@@ -35,6 +35,7 @@ public class Elevator extends Agent {
     }
 
     public void setup() {
+        super.setup();
         this.addBehaviour(new ElevatorBehaviour());
         DFAgentDescription dfd = new DFAgentDescription();
         dfd.setName(getAID());
@@ -51,6 +52,16 @@ public class Elevator extends Agent {
     }
 
     private class ElevatorBehaviour extends CyclicBehaviour {
+
+        private void updateInterface() {
+            ElevatorState elevatorState = new ElevatorState(actualFloor, actualWeight, internalRequests.size());
+            ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
+            msg.setSender(myAgent.getAID());
+            msg.addReceiver(myAgent.getAID(MyInterface.agentType));
+            msg.setProtocol(MyInterface.agentType);
+            msg.setContent(elevatorState.toString());
+            send(msg);
+        }
 
         @Override
         public void action() {
@@ -79,12 +90,14 @@ public class Elevator extends Agent {
                 actualWeight = nextActualWeight;
 
                 //System.out.println("Agent: " + this.getAgent().getAID().getLocalName() + " Floor: " + nextFloor + " AW: " + actualWeight + " MW: " + maxWeight);
+                updateInterface();
                 try {
                     Thread.sleep(moveTime * Math.abs(nextFloor - actualFloor));
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
                 actualFloor = nextFloor;
+                updateInterface();
             }
             ACLMessage msg;
             while ((msg = receive(MessageTemplate.MatchProtocol(Building.agentType))) != null) {
