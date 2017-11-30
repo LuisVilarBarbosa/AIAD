@@ -1,15 +1,19 @@
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public class ElevatorMessage {
     private int source;
     private int destination;
     private int distanceToSource;
     private static final String separator = "_";
+    private static final Pattern pattern = Pattern.compile("(\\d+)" + separator + "(\\d+)" + separator + "(\\d+)");
 
     public ElevatorMessage(String message) {
-        String[] parts = message.split(separator);
-        if (parts.length == 3) {
-            this.source = Integer.parseInt(parts[0]);
-            this.destination = Integer.parseInt(parts[1]);
-            this.distanceToSource = Integer.parseInt(parts[2]);
+        Matcher matcher = pattern.matcher(message);
+        if (matcher.matches()) {
+            this.source = Integer.parseInt(matcher.group(1));
+            this.destination = Integer.parseInt(matcher.group(2));
+            this.distanceToSource = Integer.parseInt(matcher.group(3));
         } else
             throw new IllegalArgumentException("Invalid format for message");
     }

@@ -1,21 +1,27 @@
 import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ElevatorState {
     private int actualFloor;
     private int actualWeight;
     private int internalRequestsSize;
     private ArrayList<String> information;
-    private static final String separator = "_";
+    private static final String separator = "§";
+    private static final Pattern pattern = Pattern.compile("(\\d+)" + separator + "(\\d+)" + separator + "(\\d+)(" + separator + "(.+))?");
 
     public ElevatorState(String message) {
-        String[] parts = message.split(separator);
-        if (parts.length >= 3) {
-            this.actualFloor = Integer.parseInt(parts[0]);
-            this.actualWeight = Integer.parseInt(parts[1]);
-            this.internalRequestsSize = Integer.parseInt(parts[2]);
+        Matcher matcher = pattern.matcher(message);
+        if (matcher.matches()) {
+            this.actualFloor = Integer.parseInt(matcher.group(1));
+            this.actualWeight = Integer.parseInt(matcher.group(2));
+            this.internalRequestsSize = Integer.parseInt(matcher.group(3));
             this.information = new ArrayList<>();
-            for (int i = 3; i < parts.length; i++)
-                this.information.add(parts[i]);
+            if (matcher.groupCount() >= 5) {
+                String[] infoParts = matcher.group(5).split(separator);
+                for (String str : infoParts)
+                    this.information.add(str);
+            }
         } else
             throw new IllegalArgumentException("Invalid format for message");
     }
