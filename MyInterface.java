@@ -4,7 +4,8 @@ import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Map;
+import java.util.TreeMap;
 
 public class MyInterface extends Agent {
     public static final String agentType = "MyInterface";
@@ -44,13 +45,15 @@ public class MyInterface extends Agent {
 
     private String designScreen() {
         StringBuilder sb = new StringBuilder();
-        for (Map.Entry<String,ElevatorState> entry : elevatorStates.entrySet()) {
+        for (Map.Entry<String, ElevatorState> entry : elevatorStates.entrySet()) {
             String name = entry.getKey();
             ElevatorState es = entry.getValue();
-            sb.append(name).append(":");
-            sb.append(" Floor=").append(es.getActualFloor());
+            sb.append(name).append(":\n");
+            sb.append("\tFloor=").append(es.getActualFloor());
             sb.append(" Weight=").append(es.getActualWeight());
-            sb.append(" NumRequests=").append(es.getInternalRequestsSize());
+            sb.append(" NumRequests=").append(es.getInternalRequestsSize()).append("\n");
+            for (String info : es.getInformation())
+                sb.append("\t").append(info).append("\n");
             sb.append("\n");
         }
         return sb.toString();

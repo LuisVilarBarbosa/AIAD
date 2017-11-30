@@ -2,7 +2,7 @@ public class ElevatorMessage {
     private int source;
     private int destination;
     private int distanceToSource;
-    private static final String separator = " ";
+    private static final String separator = "_";
 
     public ElevatorMessage(String message) {
         String[] parts = message.split(separator);
