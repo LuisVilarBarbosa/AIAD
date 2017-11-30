@@ -117,8 +117,8 @@ public class Elevator extends Agent {
                 int distanceToSource = Math.abs(((Elevator) myAgent).actualFloor - requestToSend.getSource());
                 ElevatorMessage elevatorMessage = new ElevatorMessage(source, destination, distanceToSource);
                 aclMessage.setContent(elevatorMessage.toString());
-                setupContractNetInitiatorBehaviour(aclMessage);
                 addToInformation(myAgent.getAID().getLocalName() + " informing " + elevatorMessage.toString());
+                setupContractNetInitiatorBehaviour(aclMessage);
             }
             if (internalRequests.isEmpty() && actualWeight != 0) {
                 actualWeight = 0;
