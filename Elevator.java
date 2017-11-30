@@ -22,7 +22,7 @@ public class Elevator extends Agent {
     private int actualWeight = 0;
     private final Random random = new Random();
     private final TreeSet<Request> internalRequests = new TreeSet<>();
-    private final ConcurrentSkipListMap<String, Long> information;
+    private final ConcurrentSkipListMap<Long, String> information;
     private final int nResponders = 3;    // to remove
 
     public Elevator(int maxWeight, int numFloors) {
@@ -261,8 +261,8 @@ public class Elevator extends Agent {
 
     private void updateInterface() {
         cleanOldInformation();
-        ArrayList<String> informationKeys = new ArrayList<>(information.keySet());
-        ElevatorState elevatorState = new ElevatorState(actualFloor, actualWeight, internalRequests.size(), informationKeys);
+        ArrayList<String> informationValues = new ArrayList<>(information.values());
+        ElevatorState elevatorState = new ElevatorState(actualFloor, actualWeight, internalRequests.size(), informationValues);
         ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
         msg.setSender(this.getAID());
         msg.addReceiver(this.getAID(MyInterface.agentType));
@@ -272,12 +272,12 @@ public class Elevator extends Agent {
     }
 
     private void addToInformation(String str) {
-        information.put(str, System.currentTimeMillis());
+        information.put(System.currentTimeMillis(), str);
     }
 
     private void cleanOldInformation() {
-        for (Map.Entry<String, Long> entry : information.entrySet())
-            if (entry.getValue() < System.currentTimeMillis() - 10 * moveTime)
-                information.remove(entry.getKey());
+        for (Long keyMillis : information.keySet())
+            if (keyMillis < System.currentTimeMillis() - 10 * moveTime)
+                information.remove(keyMillis);
     }
 }
