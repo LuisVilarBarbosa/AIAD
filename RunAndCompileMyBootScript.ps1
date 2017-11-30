@@ -1,3 +1,6 @@
+rm -r bin/*
 javac -classpath "jade.jar;." MyBoot.java -d "bin/"
-java -classpath "jade.jar;./bin/" MyBoot
+cp default.properties bin/
+cd bin/
+java -classpath "../jade.jar;." MyBoot
 pause

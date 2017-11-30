@@ -16,15 +16,15 @@ import java.util.TreeSet;
 
 public class Building extends Agent {
     public static final String agentType = "Building";
-    private int numFloors;
-    private int numElevators;
-    private ArrayList<Integer> maxWeights;
-    private Random random = new Random();
+    private final int numFloors;
+    private final int numElevators;
+    private final ArrayList<Integer> maxWeights;
+    private final Random random = new Random();
 
-    private ArrayList<AID> elevators = new ArrayList();
-    private TreeSet<Request> externalRequests = new TreeSet<>();
+    private final ArrayList<AID> elevators = new ArrayList();
+    private final TreeSet<Request> externalRequests = new TreeSet<>();
 
-    private ArrayList<DFAgentDescription> descriptions = new ArrayList();
+    private final ArrayList<DFAgentDescription> descriptions = new ArrayList();
 
     public Building(int numFloors, int numElevators, ArrayList<Integer> maxWeights) {
         if (maxWeights.size() != numElevators)

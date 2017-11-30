@@ -1,3 +1,6 @@
+# Our script generated bin folder
+bin/
+
 # Compiled class file
 *.class
 
