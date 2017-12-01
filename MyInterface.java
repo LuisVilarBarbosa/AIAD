@@ -51,7 +51,8 @@ public class MyInterface extends Agent {
             sb.append(name).append(":\n");
             sb.append("\tFloor=").append(es.getActualFloor());
             sb.append(" Weight=").append(es.getActualWeight());
-            sb.append(" NumRequests=").append(es.getInternalRequestsSize()).append("\n");
+            sb.append(" NumRequests=").append(es.getInternalRequestsSize());
+            sb.append(" State=").append(es.getState()).append("\n");
             for (String info : es.getInformation())
                 sb.append("\t").append(info).append("\n");
             sb.append("\n");

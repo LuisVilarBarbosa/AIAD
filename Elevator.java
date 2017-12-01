@@ -14,7 +14,10 @@ import java.util.*;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 public class Elevator extends Agent {
-    public static String agentType = "Elevator";
+    public static final String agentType = "Elevator";
+    public static final String STOPPED = "Stopped";
+    public static final String GOING_UP = "Going up";
+    public static final String GOING_DOWN = "Going down";
     private final int maxWeight;
     private final int numFloors;
     private final int moveTime = 1000;
@@ -22,6 +25,7 @@ public class Elevator extends Agent {
     private int actualWeight = 0;
     private final Random random = new Random();
     private final TreeSet<Request> internalRequests = new TreeSet<>();
+    private String state;
     private final ConcurrentSkipListMap<Long, String> information;
     private final int nResponders = 3;    // to remove
 
@@ -34,6 +38,7 @@ public class Elevator extends Agent {
             throw new IllegalArgumentException("Invalid number of floors: " + numFloors);
         this.numFloors = numFloors;
         this.information = new ConcurrentSkipListMap<>();
+        this.state = STOPPED;
     }
 
     public void setup() {
@@ -81,6 +86,14 @@ public class Elevator extends Agent {
                 } while (nextActualWeight < 0 || nextActualWeight > maxWeight);
                 actualWeight = nextActualWeight;
 
+                int distance = nextFloor - actualFloor;
+                if (distance > 0)
+                    state = GOING_UP;
+                else if (distance < 0)
+                    state = GOING_DOWN;
+                else
+                    state = STOPPED;
+
                 //addToInformation("Agent: " + this.getAgent().getAID().getLocalName() + " Floor: " + nextFloor + " AW: " + actualWeight + " MW: " + maxWeight);
                 updateInterface();
                 try {
@@ -122,6 +135,7 @@ public class Elevator extends Agent {
             }
             if (internalRequests.isEmpty() && actualWeight != 0) {
                 actualWeight = 0;
+                state = STOPPED;
                 updateInterface();
             }
         }
@@ -262,7 +276,7 @@ public class Elevator extends Agent {
     private void updateInterface() {
         cleanOldInformation();
         ArrayList<String> informationValues = new ArrayList<>(information.values());
-        ElevatorState elevatorState = new ElevatorState(actualFloor, actualWeight, internalRequests.size(), informationValues);
+        ElevatorState elevatorState = new ElevatorState(actualFloor, actualWeight, internalRequests.size(), state, informationValues);
         ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
         msg.setSender(this.getAID());
         msg.addReceiver(this.getAID(MyInterface.agentType));
