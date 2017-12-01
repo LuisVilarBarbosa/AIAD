@@ -21,7 +21,7 @@ public class Elevator extends Agent {
     public static final String GOING_DOWN = "Going down";
     private final int maxWeight;
     private final int numFloors;
-    private final int moveTime;
+    private final long moveTime;
     private int actualFloor;
     private int actualWeight;
     private final Random random;
@@ -30,7 +30,7 @@ public class Elevator extends Agent {
     private final ConcurrentSkipListMap<Long, String> information;
     private final int nResponders = 3;    // to remove
 
-    public Elevator(int maxWeight, int numFloors) {
+    public Elevator(final int maxWeight, final int numFloors) {
         super();
         if (maxWeight < 0)
             throw new IllegalArgumentException("Invalid maximum weight: " + maxWeight);
@@ -38,7 +38,7 @@ public class Elevator extends Agent {
         if (numFloors < 0)
             throw new IllegalArgumentException("Invalid number of floors: " + numFloors);
         this.numFloors = numFloors;
-        this.moveTime = 1000;
+        this.moveTime = Timer.ONE_SECOND;
         this.actualFloor = 0;
         this.actualWeight = 0;
         this.random = new Random();
@@ -49,7 +49,7 @@ public class Elevator extends Agent {
 
     public void setup() {
         super.setup();
-        this.addBehaviour(new ElevatorBehaviour());
+        addBehaviour(new ElevatorBehaviour());
         DFAgentDescription dfd = new DFAgentDescription();
         dfd.setName(getAID());
         ServiceDescription sd = new ServiceDescription();
@@ -72,44 +72,23 @@ public class Elevator extends Agent {
             if (!internalRequests.isEmpty()) {
                 int nextFloor = getAndRemoveClosestTo(actualFloor);
                 updateWeight();
-
-                int distance = nextFloor - actualFloor;
-                if (distance > 0)
-                    state = GOING_UP;
-                else if (distance < 0)
-                    state = GOING_DOWN;
-                else
-                    state = STOPPED;
-
+                updateState(nextFloor);
                 //addToInformation("Agent: " + this.getAgent().getAID().getLocalName() + " Floor: " + nextFloor + " AW: " + actualWeight + " MW: " + maxWeight);
                 updateInterface();
-                for (int i = 0; i < Math.abs(distance); i++) {
-                    try {
-                        Thread.sleep(moveTime);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    switch (state) {
-                        case STOPPED:
-                            break;
-                        case GOING_UP:
-                            actualFloor++;
-                            break;
-                        case GOING_DOWN:
-                            actualFloor--;
-                            break;
-                        default:
-                            addToInformation("Bug found.");
-                    }
+                int distance = Math.abs(nextFloor - actualFloor);
+                for (int i = 0; i < distance; i++) {
+                    CommonFunctions.sleep(moveTime);
+                    updateFloorBasedOnState();
                     updateInterface();
                 }
+                updateState(nextFloor);
             }
             receiveRequests();
             proposeRequestToOthers();
+            updateInterface();
 
             if (internalRequests.isEmpty() && actualWeight != 0) {
                 actualWeight = 0;
-                state = STOPPED;
                 updateInterface();
             }
         }
@@ -138,7 +117,6 @@ public class Elevator extends Agent {
 
         private void updateWeight() {
             int nextActualWeight;
-            int attempt = 0;
             do {
                 int nPeople = 1 + random.nextInt() % (maxWeight / 75);
                 int newWeight = 0;
@@ -153,11 +131,28 @@ public class Elevator extends Agent {
                 if (in_out == 1)
                     newWeight = -newWeight;
                 nextActualWeight = actualWeight + newWeight;
-                if (attempt > 0)
-                    //addToInformation(attempt);
-                    attempt++;
             } while (nextActualWeight < 0 || nextActualWeight > maxWeight);
             actualWeight = nextActualWeight;
+        }
+
+        private void updateState(final int nextFloor) {
+            int diff = nextFloor - actualFloor;
+            state = (diff > 0 ? GOING_UP : (diff < 0 ? GOING_DOWN : STOPPED));
+        }
+
+        private void updateFloorBasedOnState(){
+            switch (state) {
+                case STOPPED:
+                    break;
+                case GOING_UP:
+                    actualFloor++;
+                    break;
+                case GOING_DOWN:
+                    actualFloor--;
+                    break;
+                default:
+                    throw new IllegalStateException("Unexpected state");
+            }
         }
 
         private void receiveRequests() {
@@ -170,7 +165,7 @@ public class Elevator extends Agent {
                         request.setAttended();
                     internalRequests.add(request);
                 } else
-                    addToInformation("Invalid agent.");
+                    addToInformation("Invalid agent");
             }
         }
 
@@ -307,9 +302,9 @@ public class Elevator extends Agent {
 
     private void updateInterface() {
         cleanOldInformation();
-        ArrayList<String> informationValues = new ArrayList<>(information.values());
-        ElevatorState elevatorState = new ElevatorState(actualFloor, actualWeight, internalRequests.size(), state, informationValues);
-        ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
+        final ArrayList<String> informationValues = new ArrayList<>(information.values());
+        final ElevatorState elevatorState = new ElevatorState(actualFloor, actualWeight, internalRequests.size(), state, informationValues);
+        final ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
         msg.setSender(this.getAID());
         msg.addReceiver(this.getAID(MyInterface.agentType));
         msg.setProtocol(MyInterface.agentType);
@@ -317,12 +312,12 @@ public class Elevator extends Agent {
         send(msg);
     }
 
-    private void addToInformation(String str) {
+    private void addToInformation(final String str) {
         information.put(System.currentTimeMillis(), str);
     }
 
     private void cleanOldInformation() {
-        for (Long keyMillis : information.keySet())
+        for (final Long keyMillis : information.keySet())
             if (keyMillis < System.currentTimeMillis() - 10 * moveTime)
                 information.remove(keyMillis);
     }

@@ -23,8 +23,8 @@ public class MyBoot extends Boot {
     public static void main(String[] args) {
         try {
             // Create the Profile
-            ProfileImpl p = null;
-            ContainerController containerController;
+            final ProfileImpl p;
+            final ContainerController containerController;
             if (args.length > 0) {
                 if (args[0].startsWith("-")) {
                     // Settings specified as command line arguments
@@ -61,15 +61,15 @@ public class MyBoot extends Boot {
 
             try {
                 // update "USAGE" message
-                int numFloors = Integer.parseInt(p.getParameter("numFloors", "3"));
-                int numElevators = Integer.parseInt(p.getParameter("numElevators", "5"));
-                ArrayList<Integer> maxWeights = new ArrayList<>();
+                final int numFloors = Integer.parseInt(p.getParameter("numFloors", "3"));
+                final int numElevators = Integer.parseInt(p.getParameter("numElevators", "5"));
+                final ArrayList<Integer> maxWeights = new ArrayList<>();
                 for (int i = 1; i <= numElevators; i++)
                     maxWeights.add(Integer.parseInt(p.getParameter("maxWeight" + i, "500")));
 
-                AgentController buildingAC = containerController.acceptNewAgent(Building.agentType, new Building(numFloors, numElevators, maxWeights));
+                final AgentController buildingAC = containerController.acceptNewAgent(Building.agentType, new Building(numFloors, numElevators, maxWeights));
                 buildingAC.start();
-                AgentController myInterfaceAC = containerController.acceptNewAgent(MyInterface.agentType, new MyInterface());
+                final AgentController myInterfaceAC = containerController.acceptNewAgent(MyInterface.agentType, new MyInterface());
                 myInterfaceAC.start();
             } catch (StaleProxyException e) {
                 e.printStackTrace();

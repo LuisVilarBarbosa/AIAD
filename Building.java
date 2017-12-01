@@ -7,6 +7,7 @@ import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
 import jade.proto.SubscriptionInitiator;
+import jade.wrapper.AgentContainer;
 import jade.wrapper.AgentController;
 import jade.wrapper.StaleProxyException;
 
@@ -22,18 +23,20 @@ public class Building extends Agent {
     private final ArrayList<Integer> maxWeights;
     private final Random random;
     private final ArrayList<AID> elevators;
-    private final TreeSet<Request> externalRequests;
     private final ArrayList<DFAgentDescription> descriptions;
 
-    public Building(int numFloors, int numElevators, ArrayList<Integer> maxWeights) {
+    public Building(final int numFloors, final int numElevators, final ArrayList<Integer> maxWeights) {
+        if (numFloors < 0)
+            throw new IllegalArgumentException("Invalid number of floors:" + numFloors);
+        if (numElevators < 0)
+            throw new IllegalArgumentException("Invalid number of elevators: " + numElevators);
         if (maxWeights.size() != numElevators)
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Number of maximum weights for elevators different than the number of elevators.");
         this.numFloors = numFloors;
         this.numElevators = numElevators;
         this.maxWeights = maxWeights;
         this.random = new Random();
         this.elevators = new ArrayList<>();
-        this.externalRequests = new TreeSet<>();
         this.descriptions = new ArrayList<>();
     }
 
@@ -61,10 +64,11 @@ public class Building extends Agent {
     }
 
     private void generateElevatorsAgents() {
+        final AgentContainer containerController = this.getContainerController();
         for (int i = 0; i < numElevators; i++)
             try {
-                Elevator elevator = new Elevator(maxWeights.get(i), numFloors);
-                AgentController ac = this.getContainerController().acceptNewAgent(Elevator.agentType + i, elevator);
+                final Elevator elevator = new Elevator(maxWeights.get(i), numFloors);
+                final AgentController ac = containerController.acceptNewAgent(Elevator.agentType + i, elevator);
                 ac.start();
                 elevators.add(elevator.getAID());
             } catch (StaleProxyException e) {
@@ -76,47 +80,38 @@ public class Building extends Agent {
 
         @Override
         public void action() {
-            int n = random.nextInt() % (3 * numElevators);
-            generateNRequests(n);
-            sendRequests();
-            externalRequests.clear();
-            sleep(10 * Timer.ONE_SECOND);
+            final int n = random.nextInt() % (3 * numElevators);
+            final TreeSet<Request> requests = generateNRequests(n);
+            sendRequests(requests);
+            CommonFunctions.sleep(10 * Timer.ONE_SECOND);
         }
 
-        private void addRequest(int floor) {
+        private void addRequest(final int floor, final TreeSet<Request> requests) {
             if (floor < 0 || floor > numFloors)
-                throw new IllegalArgumentException("Invalid floor.");
-            Request request = new Request(floor);
-            if (!externalRequests.contains(request))
-                externalRequests.add(request);
+                throw new IllegalArgumentException("Invalid floor: " + floor);
+            final Request request = new Request(floor);
+            if (!requests.contains(request))
+                requests.add(request);
         }
 
-        private void generateNRequests(int n) {
+        private TreeSet<Request> generateNRequests(final int n) {
+            final TreeSet<Request> requests = new TreeSet<>();
             for (int i = 0; i < n; i++) {
-                int rand = Math.abs(random.nextInt() % (numFloors * 2));
-                if (rand > numFloors)
-                    addRequest(0);
-                else
-                    addRequest(rand);
+                final int rand = random.nextInt(numFloors * 2);
+                final int floor = rand > numFloors ? 0 : rand;
+                addRequest(floor, requests);
             }
+            return requests;
         }
 
-        private void sendRequests() {
-            for (Request request : externalRequests) {
-                ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
-                msg.setSender(this.getAgent().getAID());
+        private void sendRequests(final TreeSet<Request> requests) {
+            for (final Request request : requests) {
+                final ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
+                msg.setSender(myAgent.getAID());
                 msg.addReceiver(elevators.get(random.nextInt(elevators.size())));
                 msg.setProtocol(agentType);
                 msg.setContent(Integer.toString(request.getSource()));
                 send(msg);
-            }
-        }
-
-        private void sleep(long millis) {
-            try {
-                Thread.sleep(millis);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
             }
         }
     }

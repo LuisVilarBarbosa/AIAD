@@ -1,21 +1,21 @@
 public class Request implements Comparable {
-    private int source;
+    private final int source;
     private int destination;
     private boolean attended;
 
-    public Request(int source) {
+    public Request(final int source) {
         this.source = source;
         this.destination = this.source; // assumption
         this.attended = false;
     }
 
-    public Request(String vars) {
-        String[] splittedVars = vars.split(" ");
-        if (splittedVars.length != 1 && splittedVars.length != 2)
+    public Request(final String vars) {
+        final String[] splitVars = vars.split(" ");
+        if (splitVars.length != 1 && splitVars.length != 2)
             throw new IllegalArgumentException();
-        this.source = Integer.parseInt(splittedVars[0]);
-        if (splittedVars.length > 1)
-            this.destination = Integer.parseInt(splittedVars[1]);
+        this.source = Integer.parseInt(splitVars[0]);
+        if (splitVars.length > 1)
+            this.destination = Integer.parseInt(splitVars[1]);
         else
             this.destination = this.source; // assumption
         this.attended = false;
