@@ -56,6 +56,7 @@ public class Elevator extends Agent {
             e.printStackTrace();
         }
         setupContractNetResponderBehaviour();
+        updateInterface();
     }
 
     private class ElevatorBehaviour extends CyclicBehaviour {
@@ -96,13 +97,26 @@ public class Elevator extends Agent {
 
                 //addToInformation("Agent: " + this.getAgent().getAID().getLocalName() + " Floor: " + nextFloor + " AW: " + actualWeight + " MW: " + maxWeight);
                 updateInterface();
-                try {
-                    Thread.sleep(moveTime * Math.abs(nextFloor - actualFloor));
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                for (int i = 0; i < Math.abs(distance); i++) {
+                    try {
+                        Thread.sleep(moveTime);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    switch (state) {
+                        case STOPPED:
+                            break;
+                        case GOING_UP:
+                            actualFloor++;
+                            break;
+                        case GOING_DOWN:
+                            actualFloor--;
+                            break;
+                        default:
+                            addToInformation("Bug found.");
+                    }
+                    updateInterface();
                 }
-                actualFloor = nextFloor;
-                updateInterface();
             }
             ACLMessage msg;
             while ((msg = receive(MessageTemplate.MatchProtocol(Building.agentType))) != null) {

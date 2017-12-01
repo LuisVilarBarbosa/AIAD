@@ -3,6 +3,7 @@ import jade.core.behaviours.CyclicBehaviour;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 
+import javax.management.timer.Timer;
 import java.io.IOException;
 import java.util.Map;
 import java.util.TreeMap;
@@ -82,8 +83,9 @@ public class MyInterface extends Agent {
             while ((msg = receive(MessageTemplate.MatchProtocol(MyInterface.agentType))) != null) {
                 ElevatorState elevatorState = new ElevatorState(msg.getContent());
                 elevatorStates.put(msg.getSender().getLocalName(), elevatorState);
-                displayProgress(designScreen());
             }
+            displayProgress(designScreen());
+            block(Timer.ONE_SECOND);
         }
     }
 }
