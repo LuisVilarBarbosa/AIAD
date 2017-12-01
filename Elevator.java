@@ -10,6 +10,7 @@ import jade.lang.acl.MessageTemplate;
 import jade.proto.ContractNetInitiator;
 import jade.proto.ContractNetResponder;
 
+import javax.management.timer.Timer;
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListMap;
 
@@ -20,11 +21,11 @@ public class Elevator extends Agent {
     public static final String GOING_DOWN = "Going down";
     private final int maxWeight;
     private final int numFloors;
-    private final int moveTime = 1000;
-    private int actualFloor = 0;
-    private int actualWeight = 0;
-    private final Random random = new Random();
-    private final TreeSet<Request> internalRequests = new TreeSet<>();
+    private final int moveTime;
+    private int actualFloor;
+    private int actualWeight;
+    private final Random random;
+    private final TreeSet<Request> internalRequests;
     private String state;
     private final ConcurrentSkipListMap<Long, String> information;
     private final int nResponders = 3;    // to remove
@@ -37,8 +38,13 @@ public class Elevator extends Agent {
         if (numFloors < 0)
             throw new IllegalArgumentException("Invalid number of floors: " + numFloors);
         this.numFloors = numFloors;
-        this.information = new ConcurrentSkipListMap<>();
+        this.moveTime = 1000;
+        this.actualFloor = 0;
+        this.actualWeight = 0;
+        this.random = new Random();
+        this.internalRequests = new TreeSet<>();
         this.state = STOPPED;
+        this.information = new ConcurrentSkipListMap<>();
     }
 
     public void setup() {
@@ -65,27 +71,7 @@ public class Elevator extends Agent {
         public void action() {
             if (!internalRequests.isEmpty()) {
                 int nextFloor = getAndRemoveClosestTo(actualFloor);
-                int nextActualWeight;
-                int attempt = 0;
-                do {
-                    int nPeople = 1 + random.nextInt() % (maxWeight / 75);
-                    int newWeight = 0;
-                    for (int i = 0; i < nPeople; i++) {
-                        int n = random.nextInt() % 41;
-                        newWeight += (60 + n);
-                    }
-                    int freq = random.nextInt() % 100;
-                    if (freq == 0)
-                        newWeight += 20 + random.nextInt() % 81;
-                    int in_out = random.nextInt() % 2;
-                    if (in_out == 1)
-                        newWeight = -newWeight;
-                    nextActualWeight = actualWeight + newWeight;
-                    if (attempt > 0)
-                        //addToInformation(attempt);
-                        attempt++;
-                } while (nextActualWeight < 0 || nextActualWeight > maxWeight);
-                actualWeight = nextActualWeight;
+                updateWeight();
 
                 int distance = nextFloor - actualFloor;
                 if (distance > 0)
@@ -118,35 +104,9 @@ public class Elevator extends Agent {
                     updateInterface();
                 }
             }
-            ACLMessage msg;
-            while ((msg = receive(MessageTemplate.MatchProtocol(Building.agentType))) != null) {
-                addToInformation(myAgent.getName() + " msg: " + msg.getContent());
-                if (msg.getSender().getLocalName().startsWith(Building.agentType)) {
-                    Request request = new Request(Integer.parseInt(msg.getContent()));
-                    if (actualFloor == request.getSource())
-                        request.setAttended();
-                    internalRequests.add(request);
-                } else
-                    addToInformation("Invalid agent.");
-            }
+            receiveRequests();
+            proposeRequestToOthers();
 
-            if (!internalRequests.isEmpty()) {
-                // TODO While setting the negotiation we need to implement a way to temporarily lock the request, so this is not attended.
-                ACLMessage aclMessage = new ACLMessage(ACLMessage.INFORM);
-                aclMessage.setProtocol(FIPANames.InteractionProtocol.FIPA_CONTRACT_NET);
-                aclMessage.setSender(myAgent.getAID());
-                for (int i = 0; i < nResponders; i++)
-                    if (!myAgent.getAID().getLocalName().equals(Elevator.agentType + i))
-                        aclMessage.addReceiver(myAgent.getAID(Elevator.agentType + i));
-                Request requestToSend = internalRequests.last();
-                int source = requestToSend.getSource();
-                int destination = requestToSend.getDestination();
-                int distanceToSource = Math.abs(((Elevator) myAgent).actualFloor - requestToSend.getSource());
-                ElevatorMessage elevatorMessage = new ElevatorMessage(source, destination, distanceToSource);
-                aclMessage.setContent(elevatorMessage.toString());
-                addToInformation(myAgent.getAID().getLocalName() + " informing " + elevatorMessage.toString());
-                setupContractNetInitiatorBehaviour(aclMessage);
-            }
             if (internalRequests.isEmpty() && actualWeight != 0) {
                 actualWeight = 0;
                 state = STOPPED;
@@ -173,6 +133,64 @@ public class Elevator extends Agent {
             else {
                 internalRequests.remove(closest);
                 return closest.isAttended() ? closest.getDestination() : closest.getSource();
+            }
+        }
+
+        private void updateWeight() {
+            int nextActualWeight;
+            int attempt = 0;
+            do {
+                int nPeople = 1 + random.nextInt() % (maxWeight / 75);
+                int newWeight = 0;
+                for (int i = 0; i < nPeople; i++) {
+                    int n = random.nextInt() % 41;
+                    newWeight += (60 + n);
+                }
+                int freq = random.nextInt() % 100;
+                if (freq == 0)
+                    newWeight += 20 + random.nextInt() % 81;
+                int in_out = random.nextInt() % 2;
+                if (in_out == 1)
+                    newWeight = -newWeight;
+                nextActualWeight = actualWeight + newWeight;
+                if (attempt > 0)
+                    //addToInformation(attempt);
+                    attempt++;
+            } while (nextActualWeight < 0 || nextActualWeight > maxWeight);
+            actualWeight = nextActualWeight;
+        }
+
+        private void receiveRequests() {
+            ACLMessage msg;
+            while ((msg = receive(MessageTemplate.MatchProtocol(Building.agentType))) != null) {
+                addToInformation(myAgent.getName() + " msg: " + msg.getContent());
+                if (msg.getSender().getLocalName().startsWith(Building.agentType)) {
+                    Request request = new Request(Integer.parseInt(msg.getContent()));
+                    if (actualFloor == request.getSource())
+                        request.setAttended();
+                    internalRequests.add(request);
+                } else
+                    addToInformation("Invalid agent.");
+            }
+        }
+
+        private void proposeRequestToOthers() {
+            if (!internalRequests.isEmpty()) {
+                // TODO While setting the negotiation we need to implement a way to temporarily lock the request, so this is not attended.
+                ACLMessage aclMessage = new ACLMessage(ACLMessage.INFORM);
+                aclMessage.setProtocol(FIPANames.InteractionProtocol.FIPA_CONTRACT_NET);
+                aclMessage.setSender(myAgent.getAID());
+                for (int i = 0; i < nResponders; i++)
+                    if (!myAgent.getAID().getLocalName().equals(Elevator.agentType + i))
+                        aclMessage.addReceiver(myAgent.getAID(Elevator.agentType + i));
+                Request requestToSend = internalRequests.last();
+                int source = requestToSend.getSource();
+                int destination = requestToSend.getDestination();
+                int distanceToSource = Math.abs(((Elevator) myAgent).actualFloor - requestToSend.getSource());
+                ElevatorMessage elevatorMessage = new ElevatorMessage(source, destination, distanceToSource);
+                aclMessage.setContent(elevatorMessage.toString());
+                addToInformation(myAgent.getAID().getLocalName() + " informing " + elevatorMessage.toString());
+                setupContractNetInitiatorBehaviour(aclMessage);
             }
         }
     }

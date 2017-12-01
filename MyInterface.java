@@ -10,11 +10,9 @@ import java.util.TreeMap;
 
 public class MyInterface extends Agent {
     public static final String agentType = "MyInterface";
-    private int backtrackCounter;
     private TreeMap<String, ElevatorState> elevatorStates;
 
     public MyInterface() {
-        this.backtrackCounter = 0;
         this.elevatorStates = new TreeMap<>();
     }
 
@@ -24,22 +22,7 @@ public class MyInterface extends Agent {
         addBehaviour(new MyInterfaceBehaviour());
     }
 
-    private void displayProgress(String str) {
-        displayAux(str);
-        backtrackCounter = str.length();
-    }
-
     private void display(String str) {
-        displayAux(str);
-        backtrackCounter = 0;
-    }
-
-    private void displayAux(String str) {
-        /*StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < backtrackCounter; i++)
-            sb.append('\b');
-        sb.append(str);
-        System.out.print(sb.toString());*/
         clearConsole();
         System.out.println(str);
     }
@@ -68,9 +51,7 @@ public class MyInterface extends Agent {
                 new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
             else
                 Runtime.getRuntime().exec("clear");
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
     }
@@ -84,7 +65,7 @@ public class MyInterface extends Agent {
                 ElevatorState elevatorState = new ElevatorState(msg.getContent());
                 elevatorStates.put(msg.getSender().getLocalName(), elevatorState);
             }
-            displayProgress(designScreen());
+            display(designScreen());
             block(Timer.ONE_SECOND);
         }
     }

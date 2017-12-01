@@ -10,6 +10,7 @@ import jade.proto.SubscriptionInitiator;
 import jade.wrapper.AgentController;
 import jade.wrapper.StaleProxyException;
 
+import javax.management.timer.Timer;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.TreeSet;
@@ -19,12 +20,10 @@ public class Building extends Agent {
     private final int numFloors;
     private final int numElevators;
     private final ArrayList<Integer> maxWeights;
-    private final Random random = new Random();
-
-    private final ArrayList<AID> elevators = new ArrayList();
-    private final TreeSet<Request> externalRequests = new TreeSet<>();
-
-    private final ArrayList<DFAgentDescription> descriptions = new ArrayList();
+    private final Random random;
+    private final ArrayList<AID> elevators;
+    private final TreeSet<Request> externalRequests;
+    private final ArrayList<DFAgentDescription> descriptions;
 
     public Building(int numFloors, int numElevators, ArrayList<Integer> maxWeights) {
         if (maxWeights.size() != numElevators)
@@ -32,6 +31,10 @@ public class Building extends Agent {
         this.numFloors = numFloors;
         this.numElevators = numElevators;
         this.maxWeights = maxWeights;
+        this.random = new Random();
+        this.elevators = new ArrayList<>();
+        this.externalRequests = new TreeSet<>();
+        this.descriptions = new ArrayList<>();
     }
 
     protected void setup() {
@@ -53,6 +56,11 @@ public class Building extends Agent {
             }
         };
         addBehaviour(b);
+        generateElevatorsAgents();
+        addBehaviour(new BuildingBehaviour());
+    }
+
+    private void generateElevatorsAgents() {
         for (int i = 0; i < numElevators; i++)
             try {
                 Elevator elevator = new Elevator(maxWeights.get(i), numFloors);
@@ -62,16 +70,6 @@ public class Building extends Agent {
             } catch (StaleProxyException e) {
                 e.printStackTrace();
             }
-
-        this.addBehaviour(new BuildingBehaviour());
-    }
-
-    private void addRequest(int floor) {
-        if (floor < 0 || floor > numFloors)
-            throw new IllegalArgumentException("Invalid floor.");
-        Request request = new Request(floor);
-        if (!externalRequests.contains(request))
-            externalRequests.add(request);
     }
 
     private class BuildingBehaviour extends CyclicBehaviour {
@@ -79,6 +77,21 @@ public class Building extends Agent {
         @Override
         public void action() {
             int n = random.nextInt() % (3 * numElevators);
+            generateNRequests(n);
+            sendRequests();
+            externalRequests.clear();
+            sleep(10 * Timer.ONE_SECOND);
+        }
+
+        private void addRequest(int floor) {
+            if (floor < 0 || floor > numFloors)
+                throw new IllegalArgumentException("Invalid floor.");
+            Request request = new Request(floor);
+            if (!externalRequests.contains(request))
+                externalRequests.add(request);
+        }
+
+        private void generateNRequests(int n) {
             for (int i = 0; i < n; i++) {
                 int rand = Math.abs(random.nextInt() % (numFloors * 2));
                 if (rand > numFloors)
@@ -86,6 +99,9 @@ public class Building extends Agent {
                 else
                     addRequest(rand);
             }
+        }
+
+        private void sendRequests() {
             for (Request request : externalRequests) {
                 ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
                 msg.setSender(this.getAgent().getAID());
@@ -94,9 +110,11 @@ public class Building extends Agent {
                 msg.setContent(Integer.toString(request.getSource()));
                 send(msg);
             }
-            externalRequests.clear();
+        }
+
+        private void sleep(long millis) {
             try {
-                Thread.sleep(10000);
+                Thread.sleep(millis);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

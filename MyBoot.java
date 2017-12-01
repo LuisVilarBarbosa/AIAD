@@ -3,7 +3,6 @@ import jade.core.Profile;
 import jade.core.ProfileException;
 import jade.core.ProfileImpl;
 import jade.core.Runtime;
-import jade.util.Logger;
 import jade.util.leap.Properties;
 import jade.wrapper.AgentController;
 import jade.wrapper.ContainerController;
@@ -14,7 +13,6 @@ import java.util.ArrayList;
 // Based on the Boot class source code of the version 4.5.0
 public class MyBoot extends Boot {
     public static final String DEFAULT_FILENAME = "default.properties";
-    private static Logger logger = Logger.getMyLogger("jade.MyBoot");
 
     /**
      * Fires up the <b><em>JADE</em></b> system.
@@ -69,10 +67,10 @@ public class MyBoot extends Boot {
                 for (int i = 1; i <= numElevators; i++)
                     maxWeights.add(Integer.parseInt(p.getParameter("maxWeight" + i, "500")));
 
-                AgentController ac = containerController.acceptNewAgent(Building.agentType, new Building(numFloors, numElevators, maxWeights));
-                ac.start();
-                AgentController ac2 = containerController.acceptNewAgent(MyInterface.agentType, new MyInterface());
-                ac2.start();
+                AgentController buildingAC = containerController.acceptNewAgent(Building.agentType, new Building(numFloors, numElevators, maxWeights));
+                buildingAC.start();
+                AgentController myInterfaceAC = containerController.acceptNewAgent(MyInterface.agentType, new MyInterface());
+                myInterfaceAC.start();
             } catch (StaleProxyException e) {
                 e.printStackTrace();
             }
