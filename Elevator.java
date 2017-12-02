@@ -10,7 +10,6 @@ import jade.lang.acl.MessageTemplate;
 import jade.proto.ContractNetInitiator;
 import jade.proto.ContractNetResponder;
 
-import javax.management.timer.Timer;
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListMap;
 
@@ -21,7 +20,7 @@ public class Elevator extends Agent {
     public static final String GOING_DOWN = "Going down";
     private final int maxWeight;
     private final int numFloors;
-    private final long moveTime;
+    private final long movementTime;
     private int actualFloor;
     private int actualWeight;
     private final Random random;
@@ -30,7 +29,7 @@ public class Elevator extends Agent {
     private final ConcurrentSkipListMap<Long, String> information;
     private final int nResponders = 3;    // to remove
 
-    public Elevator(final int maxWeight, final int numFloors) {
+    public Elevator(final int maxWeight, final int numFloors, final long movementTime) {
         super();
         if (maxWeight < 0)
             throw new IllegalArgumentException("Invalid maximum weight: " + maxWeight);
@@ -38,7 +37,7 @@ public class Elevator extends Agent {
         if (numFloors < 0)
             throw new IllegalArgumentException("Invalid number of floors: " + numFloors);
         this.numFloors = numFloors;
-        this.moveTime = Timer.ONE_SECOND;
+        this.movementTime = movementTime;
         this.actualFloor = 0;
         this.actualWeight = 0;
         this.random = new Random();
@@ -70,16 +69,17 @@ public class Elevator extends Agent {
         @Override
         public void action() {
             if (!internalRequests.isEmpty()) {
+                int initialFloor = actualFloor;
                 int nextFloor = getAndRemoveClosestTo(actualFloor);
                 updateWeight();
                 updateState(nextFloor);
                 //addToInformation("Agent: " + this.getAgent().getAID().getLocalName() + " Floor: " + nextFloor + " AW: " + actualWeight + " MW: " + maxWeight);
-                updateInterface();
+                updateInterface(initialFloor, nextFloor);
                 int distance = Math.abs(nextFloor - actualFloor);
                 for (int i = 0; i < distance; i++) {
-                    CommonFunctions.sleep(moveTime);
+                    CommonFunctions.sleep(movementTime);
                     updateFloorBasedOnState();
-                    updateInterface();
+                    updateInterface(initialFloor, nextFloor);
                 }
                 updateState(nextFloor);
             }
@@ -103,7 +103,7 @@ public class Elevator extends Agent {
                 closest = higher;
             else if (higher == null)
                 closest = floor;
-            else if (number - (floor.isAttended() ? floor.getDestination() : floor.getSource()) < (higher.isAttended() ? higher.getDestination() : higher.getSource()) - number)
+            else if (number - (floor.isAttended() ? floor.getDestinationFloor() : floor.getInitialFloor()) < (higher.isAttended() ? higher.getDestinationFloor() : higher.getInitialFloor()) - number)
                 closest = floor;
             else
                 closest = higher;
@@ -112,7 +112,7 @@ public class Elevator extends Agent {
                 return number;
             else {
                 internalRequests.remove(closest);
-                return closest.isAttended() ? closest.getDestination() : closest.getSource();
+                return closest.isAttended() ? closest.getDestinationFloor() : closest.getInitialFloor();
             }
         }
 
@@ -164,7 +164,7 @@ public class Elevator extends Agent {
                 if (msg.getSender().getLocalName().startsWith(Building.agentType)) {
                     received = true;
                     Request request = new Request(Integer.parseInt(msg.getContent()));
-                    if (actualFloor == request.getSource())
+                    if (actualFloor == request.getInitialFloor())
                         request.setAttended();
                     internalRequests.add(request);
                 } else
@@ -184,9 +184,10 @@ public class Elevator extends Agent {
                     if (!myAgent.getAID().getLocalName().equals(Elevator.agentType + i))
                         aclMessage.addReceiver(myAgent.getAID(Elevator.agentType + i));
                 Request requestToSend = internalRequests.get(internalRequests.size() - 1);
-                int source = requestToSend.getSource();
-                int destination = requestToSend.getDestination();
-                int distanceToSource = Math.abs(((Elevator) myAgent).actualFloor - requestToSend.getSource());
+                int source = requestToSend.getInitialFloor();
+                int destination = requestToSend.getDestinationFloor();
+                int distanceToSource = Math.abs(((Elevator) myAgent).actualFloor - requestToSend.getInitialFloor());
+                // TODO Should send the time necessary to arrive at destination.
                 ElevatorMessage elevatorMessage = new ElevatorMessage(source, destination, distanceToSource);
                 aclMessage.setContent(elevatorMessage.toString());
                 addToInformation(myAgent.getAID().getLocalName() + " informing " + elevatorMessage.toString());
@@ -235,8 +236,8 @@ public class Elevator extends Agent {
                         reply.setPerformative(ACLMessage.REJECT_PROPOSAL);
                         acceptances.addElement(reply);
                         ElevatorMessage proposal = new ElevatorMessage(msg.getContent());
-                        if (proposal.getDistanceToSource() <= bestProposal) {
-                            bestProposal = proposal.getDistanceToSource();
+                        if (proposal.getDistanceToInitialFloor() <= bestProposal) {
+                            bestProposal = proposal.getDistanceToInitialFloor();
                             bestProposer = msg.getSender();
                             accept = reply;
                         }
@@ -262,14 +263,14 @@ public class Elevator extends Agent {
             protected ACLMessage handleCfp(ACLMessage cfp) throws NotUnderstoodException, RefuseException {
                 addToInformation("Agent " + getLocalName() + ": CFP received from " + cfp.getSender().getName() + ". Action is " + cfp.getContent());
                 ElevatorMessage proposedRequest = new ElevatorMessage(cfp.getContent());
-                int myDistanceToDo = Math.abs(actualFloor - proposedRequest.getSource());
-                if (myDistanceToDo <= proposedRequest.getDistanceToSource()) {
+                int myDistanceToDo = Math.abs(actualFloor - proposedRequest.getInitialFloor());
+                if (myDistanceToDo <= proposedRequest.getDistanceToInitialFloor()) {
                     // We provide a proposal
                     addToInformation("Agent " + getLocalName() + ": Proposing " + myDistanceToDo);
                     ACLMessage propose = cfp.createReply();
                     propose.setPerformative(ACLMessage.PROPOSE);
                     propose.setProtocol(FIPANames.InteractionProtocol.FIPA_CONTRACT_NET);
-                    ElevatorMessage myPropose = new ElevatorMessage(proposedRequest.getSource(), proposedRequest.getDestination(), myDistanceToDo);
+                    ElevatorMessage myPropose = new ElevatorMessage(proposedRequest.getInitialFloor(), proposedRequest.getDestinationFloor(), myDistanceToDo);
                     propose.setContent(myPropose.toString());
                     return propose;
                 } else {
@@ -306,9 +307,13 @@ public class Elevator extends Agent {
     }
 
     private void updateInterface() {
+        updateInterface(actualFloor, actualFloor);
+    }
+
+    private void updateInterface(int sourceFloor, int destinationFloor) {
         cleanOldInformation();
         final ArrayList<String> informationValues = new ArrayList<>(information.values());
-        final ElevatorState elevatorState = new ElevatorState(actualFloor, actualWeight, internalRequests.size(), state, informationValues);
+        final ElevatorState elevatorState = new ElevatorState(actualFloor, actualWeight, internalRequests.size(), state, informationValues, sourceFloor, destinationFloor, maxWeight, movementTime);
         final ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
         msg.setSender(this.getAID());
         msg.addReceiver(this.getAID(MyInterface.agentType));
@@ -323,7 +328,7 @@ public class Elevator extends Agent {
 
     private void cleanOldInformation() {
         for (final Long keyMillis : information.keySet())
-            if (keyMillis < System.currentTimeMillis() - 10 * moveTime)
+            if (keyMillis < System.currentTimeMillis() - 10 * movementTime)
                 information.remove(keyMillis);
     }
 }

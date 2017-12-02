@@ -66,10 +66,13 @@ public class MyBoot extends Boot {
                 final int numFloors = Integer.parseInt(p.getParameter("numFloors", "3"));
                 final int numElevators = Integer.parseInt(p.getParameter("numElevators", "5"));
                 final ArrayList<Integer> maxWeights = new ArrayList<>();
-                for (int i = 1; i <= numElevators; i++)
+                final ArrayList<Long> movementTimes = new ArrayList<>();
+                for (int i = 0; i < numElevators; i++) {
                     maxWeights.add(Integer.parseInt(p.getParameter("maxWeight" + i, "500")));
+                    movementTimes.add(Long.parseLong(p.getParameter("movementTime" + i, "1000")));
+                }
 
-                final AgentController buildingAC = containerController.acceptNewAgent(Building.agentType, new Building(numFloors, numElevators, maxWeights));
+                final AgentController buildingAC = containerController.acceptNewAgent(Building.agentType, new Building(numFloors, numElevators, maxWeights, movementTimes));
                 buildingAC.start();
                 final AgentController myInterfaceAC = containerController.acceptNewAgent(MyInterface.agentType, new MyInterface());
                 myInterfaceAC.start();

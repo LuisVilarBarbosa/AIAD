@@ -1,11 +1,11 @@
 public class Request implements Comparable {
-    private final int source;
-    private int destination;
+    private final int initialFloor;
+    private int destinationFloor;
     private boolean attended;
 
-    public Request(final int source) {
-        this.source = source;
-        this.destination = this.source; // assumption
+    public Request(final int initialFloor) {
+        this.initialFloor = initialFloor;
+        this.destinationFloor = this.initialFloor; // assumption
         this.attended = false;
     }
 
@@ -13,29 +13,29 @@ public class Request implements Comparable {
         final String[] splitVars = vars.split(" ");
         if (splitVars.length != 1 && splitVars.length != 2)
             throw new IllegalArgumentException();
-        this.source = Integer.parseInt(splitVars[0]);
+        this.initialFloor = Integer.parseInt(splitVars[0]);
         if (splitVars.length > 1)
-            this.destination = Integer.parseInt(splitVars[1]);
+            this.destinationFloor = Integer.parseInt(splitVars[1]);
         else
-            this.destination = this.source; // assumption
+            this.destinationFloor = this.initialFloor; // assumption
         this.attended = false;
 
     }
 
-    public void setDestination(int destination) {
-        this.destination = destination;
+    public void setDestinationFloor(int destinationFloor) {
+        this.destinationFloor = destinationFloor;
     }
 
     public void setAttended() {
         this.attended = true;
     }
 
-    public int getSource() {
-        return source;
+    public int getInitialFloor() {
+        return initialFloor;
     }
 
-    public int getDestination() {
-        return destination;
+    public int getDestinationFloor() {
+        return destinationFloor;
     }
 
     public boolean isAttended() {
@@ -46,13 +46,13 @@ public class Request implements Comparable {
     public int compareTo(Object o) {
         Request r = (Request) o;
         if (this.attended && r.attended)
-            return Integer.compare(this.destination, r.destination);
+            return Integer.compare(this.destinationFloor, r.destinationFloor);
         else if (this.attended && !r.attended)
-            return Integer.compare(this.destination, r.source);
+            return Integer.compare(this.destinationFloor, r.initialFloor);
         else if (!this.attended && r.attended)
-            return Integer.compare(this.source, r.destination);
+            return Integer.compare(this.initialFloor, r.destinationFloor);
         else
-            return Integer.compare(this.source, r.source);
+            return Integer.compare(this.initialFloor, r.initialFloor);
     }
 
     @Override
@@ -62,8 +62,8 @@ public class Request implements Comparable {
 
         Request request = (Request) o;
 
-        if (source != request.source) return false;
-        if (destination != request.destination) return false;
+        if (initialFloor != request.initialFloor) return false;
+        if (destinationFloor != request.destinationFloor) return false;
         return attended == request.attended;
     }
 }

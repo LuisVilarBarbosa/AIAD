@@ -20,11 +20,12 @@ public class Building extends Agent {
     private final int numFloors;
     private final int numElevators;
     private final ArrayList<Integer> maxWeights;
+    private final ArrayList<Long> movementTimes;
     private final Random random;
     private final ArrayList<AID> elevators;
     private final ArrayList<DFAgentDescription> descriptions;
 
-    public Building(final int numFloors, final int numElevators, final ArrayList<Integer> maxWeights) {
+    public Building(final int numFloors, final int numElevators, final ArrayList<Integer> maxWeights, final ArrayList<Long> movementTimes) {
         super();
         if (numFloors < 0)
             throw new IllegalArgumentException("Invalid number of floors:" + numFloors);
@@ -35,6 +36,7 @@ public class Building extends Agent {
         this.numFloors = numFloors;
         this.numElevators = numElevators;
         this.maxWeights = maxWeights;
+        this.movementTimes = movementTimes;
         this.random = new Random();
         this.elevators = new ArrayList<>();
         this.descriptions = new ArrayList<>();
@@ -67,7 +69,7 @@ public class Building extends Agent {
         final AgentContainer containerController = this.getContainerController();
         for (int i = 0; i < numElevators; i++)
             try {
-                final Elevator elevator = new Elevator(maxWeights.get(i), numFloors);
+                final Elevator elevator = new Elevator(maxWeights.get(i), numFloors, movementTimes.get(i));
                 final AgentController ac = containerController.acceptNewAgent(Elevator.agentType + i, elevator);
                 ac.start();
                 elevators.add(elevator.getAID());
@@ -109,7 +111,7 @@ public class Building extends Agent {
                 msg.setSender(myAgent.getAID());
                 msg.addReceiver(elevators.get(random.nextInt(elevators.size())));
                 msg.setProtocol(agentType);
-                msg.setContent(Integer.toString(request.getSource()));
+                msg.setContent(Integer.toString(request.getInitialFloor()));
                 send(msg);
             }
         }
