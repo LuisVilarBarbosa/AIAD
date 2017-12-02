@@ -25,7 +25,7 @@ public class Elevator extends Agent {
     private int actualFloor;
     private int actualWeight;
     private final Random random;
-    private final TreeSet<Request> internalRequests;
+    private final ArrayList<Request> internalRequests;
     private String state;
     private final ConcurrentSkipListMap<Long, String> information;
     private final int nResponders = 3;    // to remove
@@ -42,7 +42,7 @@ public class Elevator extends Agent {
         this.actualFloor = 0;
         this.actualWeight = 0;
         this.random = new Random();
-        this.internalRequests = new TreeSet<>();
+        this.internalRequests = new ArrayList<>();
         this.state = STOPPED;
         this.information = new ConcurrentSkipListMap<>();
     }
@@ -94,8 +94,9 @@ public class Elevator extends Agent {
         }
 
         private int getAndRemoveClosestTo(int number) {
-            Request floor = internalRequests.floor(new Request(number));    // can find a request with 'source' equal to 'number'
-            Request higher = internalRequests.higher(new Request(number));
+            int pos = internalRequests.indexOf(new Request(number));
+            Request floor = pos - 1 >= 0 ? internalRequests.get(pos - 1) : null;
+            Request higher = pos + 1 < internalRequests.size() ? internalRequests.get(pos + 1) : null;
 
             Request closest;
             if (floor == null)
@@ -140,7 +141,7 @@ public class Elevator extends Agent {
             state = (diff > 0 ? GOING_UP : (diff < 0 ? GOING_DOWN : STOPPED));
         }
 
-        private void updateFloorBasedOnState(){
+        private void updateFloorBasedOnState() {
             switch (state) {
                 case STOPPED:
                     break;
@@ -157,9 +158,11 @@ public class Elevator extends Agent {
 
         private void receiveRequests() {
             ACLMessage msg;
+            boolean received = false;
             while ((msg = receive(MessageTemplate.MatchProtocol(Building.agentType))) != null) {
                 addToInformation(myAgent.getName() + " msg: " + msg.getContent());
                 if (msg.getSender().getLocalName().startsWith(Building.agentType)) {
+                    received = true;
                     Request request = new Request(Integer.parseInt(msg.getContent()));
                     if (actualFloor == request.getSource())
                         request.setAttended();
@@ -167,6 +170,8 @@ public class Elevator extends Agent {
                 } else
                     addToInformation("Invalid agent");
             }
+            if (received)
+                Collections.sort(internalRequests);
         }
 
         private void proposeRequestToOthers() {
@@ -178,7 +183,7 @@ public class Elevator extends Agent {
                 for (int i = 0; i < nResponders; i++)
                     if (!myAgent.getAID().getLocalName().equals(Elevator.agentType + i))
                         aclMessage.addReceiver(myAgent.getAID(Elevator.agentType + i));
-                Request requestToSend = internalRequests.last();
+                Request requestToSend = internalRequests.get(internalRequests.size() - 1);
                 int source = requestToSend.getSource();
                 int destination = requestToSend.getDestination();
                 int distanceToSource = Math.abs(((Elevator) myAgent).actualFloor - requestToSend.getSource());

@@ -10,6 +10,8 @@ import jade.wrapper.StaleProxyException;
 
 import java.util.ArrayList;
 
+// Some info about JADE agents in https://pt.slideshare.net/AryanRathore4/all-about-agents-jade
+
 // Based on the Boot class source code of the version 4.5.0
 public class MyBoot extends Boot {
     public static final String DEFAULT_FILENAME = "default.properties";

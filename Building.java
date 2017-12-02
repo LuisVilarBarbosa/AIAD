@@ -14,7 +14,6 @@ import jade.wrapper.StaleProxyException;
 import javax.management.timer.Timer;
 import java.util.ArrayList;
 import java.util.Random;
-import java.util.TreeSet;
 
 public class Building extends Agent {
     public static final String agentType = "Building";
@@ -26,6 +25,7 @@ public class Building extends Agent {
     private final ArrayList<DFAgentDescription> descriptions;
 
     public Building(final int numFloors, final int numElevators, final ArrayList<Integer> maxWeights) {
+        super();
         if (numFloors < 0)
             throw new IllegalArgumentException("Invalid number of floors:" + numFloors);
         if (numElevators < 0)
@@ -81,30 +81,29 @@ public class Building extends Agent {
         @Override
         public void action() {
             final int n = random.nextInt() % (3 * numElevators);
-            final TreeSet<Request> requests = generateNRequests(n);
+            final ArrayList<Request> requests = generateNRequests(n);
             sendRequests(requests);
             CommonFunctions.sleep(10 * Timer.ONE_SECOND);
         }
 
-        private void addRequest(final int floor, final TreeSet<Request> requests) {
+        private void addRequest(final int floor, final ArrayList<Request> requests) {
             if (floor < 0 || floor > numFloors)
                 throw new IllegalArgumentException("Invalid floor: " + floor);
             final Request request = new Request(floor);
-            if (!requests.contains(request))
-                requests.add(request);
+            requests.add(request);
         }
 
-        private TreeSet<Request> generateNRequests(final int n) {
-            final TreeSet<Request> requests = new TreeSet<>();
+        private ArrayList<Request> generateNRequests(final int n) {
+            final ArrayList<Request> requests = new ArrayList<>();
             for (int i = 0; i < n; i++) {
                 final int rand = random.nextInt(numFloors * 2);
-                final int floor = rand > numFloors ? 0 : rand;
+                final int floor = rand >= numFloors ? 0 : rand;
                 addRequest(floor, requests);
             }
             return requests;
         }
 
-        private void sendRequests(final TreeSet<Request> requests) {
+        private void sendRequests(final ArrayList<Request> requests) {
             for (final Request request : requests) {
                 final ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
                 msg.setSender(myAgent.getAID());
