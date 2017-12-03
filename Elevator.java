@@ -19,37 +19,22 @@ import java.util.concurrent.ConcurrentSkipListMap;
 
 public class Elevator extends Agent {
     public static final String agentType = "Elevator";
-    public static final String STOPPED = "Stopped";
-    public static final String GOING_UP = "Going up";
-    public static final String GOING_DOWN = "Going down";
-    private final int maxWeight;
-    private final int numFloors;
-    private final long movementTime;
-    private int actualFloor;
-    private int actualWeight;
+    private final ElevatorProperties properties;
+    private final ElevatorState state;
     private final Random random;
     private ArrayList<Request> internalRequests;
-    private String state;
     private final ConcurrentSkipListMap<Long, String> information;
-    private int numPeople;
+    private final ElevatorStatistics statistics;
     private final int nResponders = 3;    // to remove
 
-    public Elevator(final int maxWeight, final int numFloors, final long movementTime) {
+    public Elevator(final ElevatorProperties properties) {
         super();
-        if (maxWeight < 0)
-            throw new IllegalArgumentException("Invalid maximum weight: " + maxWeight);
-        this.maxWeight = maxWeight;
-        if (numFloors < 0)
-            throw new IllegalArgumentException("Invalid number of floors: " + numFloors);
-        this.numFloors = numFloors;
-        this.movementTime = movementTime;
-        this.actualFloor = 0;
-        this.actualWeight = 0;
+        this.properties = properties;
+        this.state = new ElevatorState();
         this.random = new Random();
         this.internalRequests = new ArrayList<>();
-        this.state = STOPPED;
         this.information = new ConcurrentSkipListMap<>();
-        this.numPeople = 0;
+        this.statistics = new ElevatorStatistics();
     }
 
     public void setup() {
@@ -77,32 +62,40 @@ public class Elevator extends Agent {
             receiveRequests();
             proposeRequestToOthers();
             peopleEntrance();
-            final int nextFloorToStop = getClosestTo(actualFloor);
-            final int diff = nextFloorToStop - actualFloor;
-            state = (diff > 0 ? GOING_UP : (diff < 0 ? GOING_DOWN : STOPPED));
+            final int currentFloor = state.getCurrentFloor();
+            final int nextFloorToStop = getClosestTo(currentFloor);
+            final int diff = nextFloorToStop - currentFloor;
+            state.setMovementState(diff > 0 ? ElevatorState.GOING_UP : (diff < 0 ? ElevatorState.GOING_DOWN : ElevatorState.STOPPED));
             updateInterface(nextFloorToStop);
             //addToInformation("Agent: " + this.getAgent().getAID().getLocalName() + " Floor: " + nextFloor + " AW: " + actualWeight + " MW: " + maxWeight);
-            if (!state.equals(STOPPED))
-                CommonFunctions.sleep(movementTime);
-            updateFloorBasedOnState();
+            if (state.getMovementState() != ElevatorState.STOPPED)
+                CommonFunctions.sleep(properties.getMovementTime());
+            updateFloorBasedOnMovementState();
             peopleExit();
             if (internalRequests.isEmpty()) {
-                actualWeight = 0;
-                numPeople = 0;
+                state.setCurrentWeight(0);
+                state.setNumPeople(0);
                 updateInterface();
             }
         }
 
         private void peopleEntrance() {
-            state = STOPPED;
+            state.setMovementState(ElevatorState.STOPPED);
             int newPeople = 0;
             for (Request request : internalRequests) {
-                if (request.getInitialFloor() == actualFloor) {
+                if (request.getInitialFloor() == state.getCurrentFloor()) {
+                    final long begin = System.currentTimeMillis();
+                    long waitTime = begin - request.getCreationTime();
+                    if (waitTime < statistics.getMinWaitTime())
+                        statistics.setMinWaitTime(waitTime);
+                    if (waitTime > statistics.getMaxWaitTime())
+                        statistics.setMaxWaitTime(waitTime);
                     CommonFunctions.sleep(Timer.ONE_SECOND);// entrance time
+                    statistics.setPeopleEntranceTime(statistics.getPeopleEntranceTime() + System.currentTimeMillis() - begin);
                     newPeople++;
-                    numPeople++;
+                    state.setNumPeople(state.getNumPeople() + 1);
                     request.setAttended();
-                    request.setDestinationFloor(random.nextInt(numFloors));
+                    request.setDestinationFloor(random.nextInt(properties.getNumFloors()));
                     updateInterface();
                 }
             }
@@ -135,7 +128,7 @@ public class Elevator extends Agent {
         }
 
         private void updateWeight(final int numPeople) {
-            int nextActualWeight;
+            int nextCurrentWeight;
             do {
                 int newWeight = 0;
                 for (int i = 0; i < numPeople; i++) {
@@ -148,20 +141,20 @@ public class Elevator extends Agent {
                 int in_out = random.nextInt() % 2;
                 if (in_out == 1)
                     newWeight = -newWeight;
-                nextActualWeight = actualWeight + newWeight;
-            } while (nextActualWeight < 0 || nextActualWeight > maxWeight);
-            actualWeight = nextActualWeight;
+                nextCurrentWeight = state.getCurrentWeight() + newWeight;
+            } while (nextCurrentWeight < 0 || nextCurrentWeight > properties.getMaxWeight());
+            state.setCurrentWeight(nextCurrentWeight);
         }
 
-        private void updateFloorBasedOnState() {
-            switch (state) {
-                case STOPPED:
+        private void updateFloorBasedOnMovementState() {
+            switch (state.getMovementState()) {
+                case ElevatorState.STOPPED:
                     break;
-                case GOING_UP:
-                    actualFloor++;
+                case ElevatorState.GOING_UP:
+                    state.setCurrentFloor(state.getCurrentFloor()+1);
                     break;
-                case GOING_DOWN:
-                    actualFloor--;
+                case ElevatorState.GOING_DOWN:
+                    state.setCurrentFloor(state.getCurrentFloor()-1);
                     break;
                 default:
                     throw new IllegalStateException("Unexpected state");
@@ -169,12 +162,14 @@ public class Elevator extends Agent {
         }
 
         private void peopleExit() {
-            state = STOPPED;
+            state.setMovementState(ElevatorState.STOPPED);
             final ArrayList<Request> newInternalRequests = new ArrayList<>(internalRequests.size());
             for (Request request : internalRequests) {
-                if (request.isAttended() && request.getDestinationFloor() == actualFloor) {
+                if (request.isAttended() && request.getDestinationFloor() == state.getCurrentFloor()) {
+                    final long begin = System.currentTimeMillis();
                     CommonFunctions.sleep(Timer.ONE_SECOND);    // exit time
-                    numPeople--;
+                    statistics.setPeopleExitTime(statistics.getPeopleExitTime() + System.currentTimeMillis() - begin);
+                    state.setNumPeople(state.getNumPeople() - 1);
                     updateInterface();
                 } else
                     newInternalRequests.add(request);
@@ -207,7 +202,7 @@ public class Elevator extends Agent {
                 Request requestToSend = internalRequests.get(internalRequests.size() - 1);
                 int source = requestToSend.getInitialFloor();
                 int destination = requestToSend.getDestinationFloor();
-                int distanceToSource = Math.abs(((Elevator) myAgent).actualFloor - requestToSend.getInitialFloor());
+                int distanceToSource = Math.abs(((Elevator) myAgent).state.getCurrentFloor() - requestToSend.getInitialFloor());
                 // TODO Should send the time necessary to arrive at destination.
                 ElevatorMessage elevatorMessage = new ElevatorMessage(source, destination, distanceToSource);
                 aclMessage.setContent(elevatorMessage.toString());
@@ -284,7 +279,7 @@ public class Elevator extends Agent {
             protected ACLMessage handleCfp(ACLMessage cfp) throws NotUnderstoodException, RefuseException {
                 addToInformation("Agent " + getLocalName() + ": CFP received from " + cfp.getSender().getName() + ". Action is " + cfp.getContent());
                 ElevatorMessage proposedRequest = new ElevatorMessage(cfp.getContent());
-                int myDistanceToDo = Math.abs(actualFloor - proposedRequest.getInitialFloor());
+                int myDistanceToDo = Math.abs(state.getCurrentFloor() - proposedRequest.getInitialFloor());
                 if (myDistanceToDo <= proposedRequest.getDistanceToInitialFloor()) {
                     // We provide a proposal
                     addToInformation("Agent " + getLocalName() + ": Proposing " + myDistanceToDo);
@@ -328,18 +323,16 @@ public class Elevator extends Agent {
     }
 
     private void updateInterface() {
-        updateInterface(actualFloor);
+        updateInterface(state.getCurrentFloor());
     }
 
     private void updateInterface(int nextFloorToStop) {
         cleanOldInformation();
-        final ArrayList<String> informationValues = new ArrayList<>(information.values());
-        final ElevatorState elevatorState = new ElevatorState(actualFloor, actualWeight, internalRequests.size(), state, informationValues, nextFloorToStop, numPeople, maxWeight, movementTime);
         final ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
         msg.setSender(this.getAID());
         msg.addReceiver(this.getAID(MyInterface.agentType));
         msg.setProtocol(MyInterface.agentType);
-        msg.setContent(elevatorState.toString());
+        msg.setContent(stateString(nextFloorToStop));
         send(msg);
     }
 
@@ -349,7 +342,28 @@ public class Elevator extends Agent {
 
     private void cleanOldInformation() {
         for (final Long keyMillis : information.keySet())
-            if (keyMillis < System.currentTimeMillis() - 10 * movementTime)
+            if (keyMillis < System.currentTimeMillis() - 10 * properties.getMovementTime())
                 information.remove(keyMillis);
+    }
+
+    private String stateString(int nextFloorToStop) {
+        final StringBuilder sb = new StringBuilder();
+        sb.append(this.getAID().getLocalName()).append(":\n");
+        sb.append("\tFloor=").append(state.getCurrentFloor());
+        sb.append(" Weight=").append(state.getCurrentWeight());
+        sb.append(" NumRequests=").append(internalRequests.size());
+        sb.append(" State=").append(ElevatorState.getMovementStateString(state.getMovementState())).append("\n");
+        sb.append("\tNextFloorToStop=").append(nextFloorToStop);
+        sb.append(" NumPeople=").append(state.getNumPeople()).append("\n");
+        sb.append("\tPeopleEntranceTime=").append(statistics.getPeopleEntranceTime());
+        sb.append(" PeopleExitTime=").append(statistics.getPeopleExitTime()).append("\n");
+        sb.append("\tMinWaitTime=").append(statistics.getMinWaitTime());
+        sb.append(" MaxWaitTime=").append(statistics.getMaxWaitTime()).append("\n");
+        sb.append("\tMaxWeight=").append(properties.getMaxWeight());
+        sb.append(" MovementTime=").append(properties.getMovementTime()).append("\n");
+        for (final String info : information.values())
+            sb.append("\t").append(info).append("\n");
+        sb.append("\n");
+        return sb.toString();
     }
 }

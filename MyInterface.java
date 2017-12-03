@@ -1,3 +1,4 @@
+import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.SimpleBehaviour;
 import jade.lang.acl.ACLMessage;
@@ -5,15 +6,14 @@ import jade.lang.acl.MessageTemplate;
 
 import javax.management.timer.Timer;
 import java.io.IOException;
-import java.util.Map;
 import java.util.TreeMap;
 
 public class MyInterface extends Agent {
     public static final String agentType = "MyInterface";
-    private final TreeMap<String, ElevatorState> elevatorStates;
+    private final TreeMap<AID, String> elevatorMessages;
 
     public MyInterface() {
-        this.elevatorStates = new TreeMap<>();
+        this.elevatorMessages = new TreeMap<>();
     }
 
     @Override
@@ -29,22 +29,8 @@ public class MyInterface extends Agent {
 
     private String designScreen() {
         final StringBuilder sb = new StringBuilder();
-        for (Map.Entry<String, ElevatorState> entry : elevatorStates.entrySet()) {
-            final String name = entry.getKey();
-            final ElevatorState es = entry.getValue();
-            sb.append(name).append(":\n");
-            sb.append("\tFloor=").append(es.getActualFloor());
-            sb.append(" Weight=").append(es.getActualWeight());
-            sb.append(" NumRequests=").append(es.getInternalRequestsSize());
-            sb.append(" State=").append(es.getState()).append("\n");
-            sb.append("\tNextFloorToStop=").append(es.getNextFloorToStop());
-            sb.append(" NumPeople=").append(es.getNumPeople()).append("\n");
-            sb.append("\tMaxWeight=").append(es.getMaxWeight());
-            sb.append(" MovementTime=").append(es.getMovementTime()).append("\n");
-            for (final String info : es.getInformation())
-                sb.append("\t").append(info).append("\n");
-            sb.append("\n");
-        }
+        for (String elevatorMessage : elevatorMessages.values())
+            sb.append(elevatorMessage);
         return sb.toString();
     }
 
@@ -66,10 +52,8 @@ public class MyInterface extends Agent {
         public void action() {
             while (true) {
                 ACLMessage msg;
-                while ((msg = receive(MessageTemplate.MatchProtocol(MyInterface.agentType))) != null) {
-                    final ElevatorState elevatorState = new ElevatorState(msg.getContent());
-                    elevatorStates.put(msg.getSender().getLocalName(), elevatorState);
-                }
+                while ((msg = receive(MessageTemplate.MatchProtocol(MyInterface.agentType))) != null)
+                    elevatorMessages.put(msg.getSender(), msg.getContent());
                 display(designScreen());
                 CommonFunctions.sleep(Timer.ONE_SECOND);
             }

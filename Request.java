@@ -2,11 +2,13 @@ public class Request implements Comparable {
     private final int initialFloor;
     private int destinationFloor;
     private boolean attended;
+    private final long creationTime;
 
     public Request(final int initialFloor) {
         this.initialFloor = initialFloor;
         this.destinationFloor = this.initialFloor; // assumption
         this.attended = false;
+        this.creationTime = System.currentTimeMillis();
     }
 
     public Request(final String vars) {
@@ -19,7 +21,7 @@ public class Request implements Comparable {
         else
             this.destinationFloor = this.initialFloor; // assumption
         this.attended = false;
-
+        this.creationTime = System.currentTimeMillis();
     }
 
     public void setDestinationFloor(int destinationFloor) {
@@ -40,6 +42,10 @@ public class Request implements Comparable {
 
     public boolean isAttended() {
         return attended;
+    }
+
+    public long getCreationTime() {
+        return creationTime;
     }
 
     @Override
