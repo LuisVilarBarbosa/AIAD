@@ -4,7 +4,7 @@ import java.util.regex.Pattern;
 public class ElevatorMessage {
     private final int initialFloor;
     private final int destinationFloor;
-    private final int distanceToInitialFloor;
+    private final long timeToInitialFloor;
     private static final String separator = "_";
     private static final Pattern pattern = Pattern.compile("(\\d+)" + separator + "(\\d+)" + separator + "(\\d+)");
 
@@ -13,15 +13,15 @@ public class ElevatorMessage {
         if (matcher.matches()) {
             this.initialFloor = Integer.parseInt(matcher.group(1));
             this.destinationFloor = Integer.parseInt(matcher.group(2));
-            this.distanceToInitialFloor = Integer.parseInt(matcher.group(3));
+            this.timeToInitialFloor = Integer.parseInt(matcher.group(3));
         } else
             throw new IllegalArgumentException("Invalid format for message: " + message);
     }
 
-    public ElevatorMessage(final int initialFloor, final int destinationFloor, final int distanceToInitialFloor) {
+    public ElevatorMessage(final int initialFloor, final int destinationFloor, final long timeToInitialFloor) {
         this.initialFloor = initialFloor;
         this.destinationFloor = destinationFloor;
-        this.distanceToInitialFloor = distanceToInitialFloor;
+        this.timeToInitialFloor = timeToInitialFloor;
     }
 
     public int getInitialFloor() {
@@ -32,12 +32,12 @@ public class ElevatorMessage {
         return destinationFloor;
     }
 
-    public int getDistanceToInitialFloor() {
-        return distanceToInitialFloor;
+    public long getTimeToInitialFloor() {
+        return timeToInitialFloor;
     }
 
     @Override
     public String toString() {
-        return initialFloor + separator + destinationFloor + separator + distanceToInitialFloor;
+        return initialFloor + separator + destinationFloor + separator + timeToInitialFloor;
     }
 }

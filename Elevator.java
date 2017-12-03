@@ -151,10 +151,10 @@ public class Elevator extends Agent {
                 case ElevatorState.STOPPED:
                     break;
                 case ElevatorState.GOING_UP:
-                    state.setCurrentFloor(state.getCurrentFloor()+1);
+                    state.setCurrentFloor(state.getCurrentFloor() + 1);
                     break;
                 case ElevatorState.GOING_DOWN:
-                    state.setCurrentFloor(state.getCurrentFloor()-1);
+                    state.setCurrentFloor(state.getCurrentFloor() - 1);
                     break;
                 default:
                     throw new IllegalStateException("Unexpected state");
@@ -193,21 +193,34 @@ public class Elevator extends Agent {
         private void proposeRequestToOthers() {
             if (!internalRequests.isEmpty()) {
                 // TODO While setting the negotiation we need to implement a way to temporarily lock the request, so this is not attended.
-                ACLMessage aclMessage = new ACLMessage(ACLMessage.INFORM);
+                final ACLMessage aclMessage = new ACLMessage(ACLMessage.INFORM);
                 aclMessage.setProtocol(FIPANames.InteractionProtocol.FIPA_CONTRACT_NET);
                 aclMessage.setSender(myAgent.getAID());
                 for (int i = 0; i < nResponders; i++)
                     if (!myAgent.getAID().getLocalName().equals(Elevator.agentType + i))
                         aclMessage.addReceiver(myAgent.getAID(Elevator.agentType + i));
-                Request requestToSend = internalRequests.get(internalRequests.size() - 1);
-                int source = requestToSend.getInitialFloor();
-                int destination = requestToSend.getDestinationFloor();
-                int distanceToSource = Math.abs(((Elevator) myAgent).state.getCurrentFloor() - requestToSend.getInitialFloor());
-                // TODO Should send the time necessary to arrive at destination.
-                ElevatorMessage elevatorMessage = new ElevatorMessage(source, destination, distanceToSource);
-                aclMessage.setContent(elevatorMessage.toString());
-                addToInformation(myAgent.getAID().getLocalName() + " informing " + elevatorMessage.toString());
-                setupContractNetInitiatorBehaviour(aclMessage);
+
+                final long currentTime = System.currentTimeMillis();
+                long largestWaitTime = 0;
+                Request requestToSend = null;
+                for (Request request : internalRequests) {
+                    if (!request.isAttended()) {
+                        final long timeToInitialFloor = expectedTimeToFloor(request.getInitialFloor());
+                        final long waitTime = currentTime - request.getCreationTime() + timeToInitialFloor;
+                        if (waitTime > largestWaitTime) {
+                            largestWaitTime = waitTime;
+                            requestToSend = request;
+                        }
+                    }
+                }
+
+                if (requestToSend != null) {
+                    final long timeToInitialFloor = largestWaitTime - (currentTime - requestToSend.getCreationTime());
+                    final ElevatorMessage elevatorMessage = new ElevatorMessage(requestToSend.getInitialFloor(), requestToSend.getDestinationFloor(), timeToInitialFloor);
+                    aclMessage.setContent(elevatorMessage.toString());
+                    addToInformation(myAgent.getAID().getLocalName() + " informing " + elevatorMessage.toString());
+                    setupContractNetInitiatorBehaviour(aclMessage);
+                }
             }
         }
     }
@@ -241,7 +254,7 @@ public class Elevator extends Agent {
                     addToInformation("Timeout expired: missing " + (nResponders - responses.size()) + " responses");
                 }
                 // Evaluate proposals.
-                int bestProposal = -1;
+                long bestProposal = -1;
                 AID bestProposer = null;
                 ACLMessage accept = null;
                 Enumeration e = responses.elements();
@@ -252,8 +265,8 @@ public class Elevator extends Agent {
                         reply.setPerformative(ACLMessage.REJECT_PROPOSAL);
                         acceptances.addElement(reply);
                         ElevatorMessage proposal = new ElevatorMessage(msg.getContent());
-                        if (proposal.getDistanceToInitialFloor() <= bestProposal) {
-                            bestProposal = proposal.getDistanceToInitialFloor();
+                        if (proposal.getTimeToInitialFloor() <= bestProposal) {
+                            bestProposal = proposal.getTimeToInitialFloor();
                             bestProposer = msg.getSender();
                             accept = reply;
                         }
@@ -279,14 +292,14 @@ public class Elevator extends Agent {
             protected ACLMessage handleCfp(ACLMessage cfp) throws NotUnderstoodException, RefuseException {
                 addToInformation("Agent " + getLocalName() + ": CFP received from " + cfp.getSender().getName() + ". Action is " + cfp.getContent());
                 ElevatorMessage proposedRequest = new ElevatorMessage(cfp.getContent());
-                int myDistanceToDo = Math.abs(state.getCurrentFloor() - proposedRequest.getInitialFloor());
-                if (myDistanceToDo <= proposedRequest.getDistanceToInitialFloor()) {
+                long myTimeToInitialFloor = expectedTimeToFloor(proposedRequest.getInitialFloor());
+                if (myTimeToInitialFloor <= proposedRequest.getTimeToInitialFloor()) {
                     // We provide a proposal
-                    addToInformation("Agent " + getLocalName() + ": Proposing " + myDistanceToDo);
+                    addToInformation("Agent " + getLocalName() + ": Proposing " + myTimeToInitialFloor);
                     ACLMessage propose = cfp.createReply();
                     propose.setPerformative(ACLMessage.PROPOSE);
                     propose.setProtocol(FIPANames.InteractionProtocol.FIPA_CONTRACT_NET);
-                    ElevatorMessage myPropose = new ElevatorMessage(proposedRequest.getInitialFloor(), proposedRequest.getDestinationFloor(), myDistanceToDo);
+                    ElevatorMessage myPropose = new ElevatorMessage(proposedRequest.getInitialFloor(), proposedRequest.getDestinationFloor(), myTimeToInitialFloor);
                     propose.setContent(myPropose.toString());
                     return propose;
                 } else {
@@ -365,5 +378,27 @@ public class Elevator extends Agent {
             sb.append("\t").append(info).append("\n");
         sb.append("\n");
         return sb.toString();
+    }
+
+    private long expectedTimeToFloor(int floor) {
+        final int currentFloor = state.getCurrentFloor();
+        long time = properties.getMovementTime() * Math.abs(floor - currentFloor);
+        for (Request request : internalRequests) {
+            int requestNextStopFloor;
+            if (request.isAttended())
+                requestNextStopFloor = request.getDestinationFloor();
+            else
+                requestNextStopFloor = request.getInitialFloor();
+            if (isBetween(floor, currentFloor, requestNextStopFloor))
+                time += Timer.ONE_SECOND;   // 1 second = entrance/exit time
+        }
+        return time;
+    }
+
+    private boolean isBetween(int number, int v1, int v2) {
+        if (v1 <= v2)
+            return v1 <= number && number <= v2;
+        else
+            return v2 <= number && number <= v1;
     }
 }
