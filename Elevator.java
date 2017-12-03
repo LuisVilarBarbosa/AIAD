@@ -10,6 +10,7 @@ import jade.lang.acl.MessageTemplate;
 import jade.proto.ContractNetInitiator;
 import jade.proto.ContractNetResponder;
 
+import javax.management.timer.Timer;
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListMap;
 
@@ -68,37 +69,43 @@ public class Elevator extends Agent {
 
         @Override
         public void action() {
-            if (!internalRequests.isEmpty()) {
-                int initialFloor = actualFloor;
-                int nextFloor = getAndRemoveClosestTo(actualFloor);
-                updateWeight();
-                updateState(nextFloor);
-                //addToInformation("Agent: " + this.getAgent().getAID().getLocalName() + " Floor: " + nextFloor + " AW: " + actualWeight + " MW: " + maxWeight);
-                updateInterface(initialFloor, nextFloor);
-                int distance = Math.abs(nextFloor - actualFloor);
-                for (int i = 0; i < distance; i++) {
-                    CommonFunctions.sleep(movementTime);
-                    updateFloorBasedOnState();
-                    updateInterface(initialFloor, nextFloor);
-                }
-                updateState(nextFloor);
-            }
             receiveRequests();
             proposeRequestToOthers();
-            updateInterface();
-
-            if (internalRequests.isEmpty() && actualWeight != 0) {
+            peopleEntrance();
+            final int nextFloorToStop = getClosestTo(actualFloor);
+            final int diff = nextFloorToStop - actualFloor;
+            state = (diff > 0 ? GOING_UP : (diff < 0 ? GOING_DOWN : STOPPED));
+            updateInterface(nextFloorToStop);
+            //addToInformation("Agent: " + this.getAgent().getAID().getLocalName() + " Floor: " + nextFloor + " AW: " + actualWeight + " MW: " + maxWeight);
+            if (!state.equals(STOPPED))
+                CommonFunctions.sleep(movementTime);
+            updateFloorBasedOnState();
+            peopleExit();
+            if (internalRequests.isEmpty())
                 actualWeight = 0;
-                updateInterface();
-            }
+            updateInterface();
         }
 
-        private int getAndRemoveClosestTo(int number) {
-            int pos = internalRequests.indexOf(new Request(number));
-            Request floor = pos - 1 >= 0 ? internalRequests.get(pos - 1) : null;
-            Request higher = pos + 1 < internalRequests.size() ? internalRequests.get(pos + 1) : null;
+        private void peopleEntrance() {
+            state = STOPPED;
+            int numPeople = 0;
+            for (Request request : internalRequests) {
+                if (request.getInitialFloor() == actualFloor) {
+                    numPeople++;
+                    request.setAttended();
+                    CommonFunctions.sleep(Timer.ONE_SECOND);// entrance time
+                    request.setDestinationFloor(random.nextInt(numFloors));
+                }
+            }
+            updateWeight(numPeople);    // could be one by one - should be in peopleEntrance() and peopleExit() only
+        }
 
-            Request closest;
+        private int getClosestTo(final int number) {
+            final int pos = internalRequests.indexOf(new Request(number));
+            final Request floor = pos - 1 >= 0 ? internalRequests.get(pos - 1) : null;
+            final Request higher = pos + 1 < internalRequests.size() ? internalRequests.get(pos + 1) : null;
+
+            final Request closest;
             if (floor == null)
                 closest = higher;
             else if (higher == null)
@@ -111,17 +118,15 @@ public class Elevator extends Agent {
             if (closest == null)
                 return number;
             else {
-                internalRequests.remove(closest);
                 return closest.isAttended() ? closest.getDestinationFloor() : closest.getInitialFloor();
             }
         }
 
-        private void updateWeight() {
+        private void updateWeight(final int numPeople) {
             int nextActualWeight;
             do {
-                int nPeople = 1 + random.nextInt() % (maxWeight / 75);
                 int newWeight = 0;
-                for (int i = 0; i < nPeople; i++) {
+                for (int i = 0; i < numPeople; i++) {
                     int n = random.nextInt() % 41;
                     newWeight += (60 + n);
                 }
@@ -134,11 +139,6 @@ public class Elevator extends Agent {
                 nextActualWeight = actualWeight + newWeight;
             } while (nextActualWeight < 0 || nextActualWeight > maxWeight);
             actualWeight = nextActualWeight;
-        }
-
-        private void updateState(final int nextFloor) {
-            int diff = nextFloor - actualFloor;
-            state = (diff > 0 ? GOING_UP : (diff < 0 ? GOING_DOWN : STOPPED));
         }
 
         private void updateFloorBasedOnState() {
@@ -156,6 +156,16 @@ public class Elevator extends Agent {
             }
         }
 
+        private void peopleExit() {
+            state = STOPPED;
+            for (Request request : internalRequests) {
+                if (request.getDestinationFloor() == actualFloor) {
+                    CommonFunctions.sleep(Timer.ONE_SECOND);    // exit time
+                    internalRequests.remove(request);
+                }
+            }
+        }
+
         private void receiveRequests() {
             ACLMessage msg;
             boolean received = false;
@@ -164,8 +174,6 @@ public class Elevator extends Agent {
                 if (msg.getSender().getLocalName().startsWith(Building.agentType)) {
                     received = true;
                     Request request = new Request(Integer.parseInt(msg.getContent()));
-                    if (actualFloor == request.getInitialFloor())
-                        request.setAttended();
                     internalRequests.add(request);
                 } else
                     addToInformation("Invalid agent");
@@ -307,13 +315,13 @@ public class Elevator extends Agent {
     }
 
     private void updateInterface() {
-        updateInterface(actualFloor, actualFloor);
+        updateInterface(actualFloor);
     }
 
-    private void updateInterface(int sourceFloor, int destinationFloor) {
+    private void updateInterface(int nextFloorToStop) {
         cleanOldInformation();
         final ArrayList<String> informationValues = new ArrayList<>(information.values());
-        final ElevatorState elevatorState = new ElevatorState(actualFloor, actualWeight, internalRequests.size(), state, informationValues, sourceFloor, destinationFloor, maxWeight, movementTime);
+        final ElevatorState elevatorState = new ElevatorState(actualFloor, actualWeight, internalRequests.size(), state, informationValues, nextFloorToStop, maxWeight, movementTime);
         final ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
         msg.setSender(this.getAID());
         msg.addReceiver(this.getAID(MyInterface.agentType));

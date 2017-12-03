@@ -37,9 +37,8 @@ public class MyInterface extends Agent {
             sb.append(" Weight=").append(es.getActualWeight());
             sb.append(" NumRequests=").append(es.getInternalRequestsSize());
             sb.append(" State=").append(es.getState()).append("\n");
-            sb.append("\tInitialFloor=").append(es.getInitialFloor());
-            sb.append(" DestinationFloor=").append(es.getDestinationFloor()).append("\n");
-            sb.append("\tMaxWeight=").append(es.getMaxWeight());
+            sb.append("\tNextFloorToStop=").append(es.getNextFloorToStop());
+            sb.append(" MaxWeight=").append(es.getMaxWeight());
             sb.append(" MovementTime=").append(es.getMovementTime()).append("\n");
             for (final String info : es.getInformation())
                 sb.append("\t").append(info).append("\n");
