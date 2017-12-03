@@ -15,7 +15,7 @@ public class ElevatorMessage {
             this.destinationFloor = Integer.parseInt(matcher.group(2));
             this.distanceToInitialFloor = Integer.parseInt(matcher.group(3));
         } else
-            throw new IllegalArgumentException("Invalid format for message");
+            throw new IllegalArgumentException("Invalid format for message: " + message);
     }
 
     public ElevatorMessage(final int initialFloor, final int destinationFloor, final int distanceToInitialFloor) {

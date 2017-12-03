@@ -11,7 +11,10 @@ import jade.proto.ContractNetInitiator;
 import jade.proto.ContractNetResponder;
 
 import javax.management.timer.Timer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.Random;
+import java.util.Vector;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 public class Elevator extends Agent {
@@ -25,9 +28,10 @@ public class Elevator extends Agent {
     private int actualFloor;
     private int actualWeight;
     private final Random random;
-    private final ArrayList<Request> internalRequests;
+    private ArrayList<Request> internalRequests;
     private String state;
     private final ConcurrentSkipListMap<Long, String> information;
+    private int numPeople;
     private final int nResponders = 3;    // to remove
 
     public Elevator(final int maxWeight, final int numFloors, final long movementTime) {
@@ -45,6 +49,7 @@ public class Elevator extends Agent {
         this.internalRequests = new ArrayList<>();
         this.state = STOPPED;
         this.information = new ConcurrentSkipListMap<>();
+        this.numPeople = 0;
     }
 
     public void setup() {
@@ -81,45 +86,52 @@ public class Elevator extends Agent {
                 CommonFunctions.sleep(movementTime);
             updateFloorBasedOnState();
             peopleExit();
-            if (internalRequests.isEmpty())
+            if (internalRequests.isEmpty()) {
                 actualWeight = 0;
-            updateInterface();
+                numPeople = 0;
+                updateInterface();
+            }
         }
 
         private void peopleEntrance() {
             state = STOPPED;
-            int numPeople = 0;
+            int newPeople = 0;
             for (Request request : internalRequests) {
                 if (request.getInitialFloor() == actualFloor) {
+                    CommonFunctions.sleep(Timer.ONE_SECOND);// entrance time
+                    newPeople++;
                     numPeople++;
                     request.setAttended();
-                    CommonFunctions.sleep(Timer.ONE_SECOND);// entrance time
                     request.setDestinationFloor(random.nextInt(numFloors));
+                    updateInterface();
                 }
             }
-            updateWeight(numPeople);    // could be one by one - should be in peopleEntrance() and peopleExit() only
+            updateWeight(newPeople);    // could be one by one - should be in peopleEntrance() and peopleExit() only
         }
 
         private int getClosestTo(final int number) {
-            final int pos = internalRequests.indexOf(new Request(number));
-            final Request floor = pos - 1 >= 0 ? internalRequests.get(pos - 1) : null;
-            final Request higher = pos + 1 < internalRequests.size() ? internalRequests.get(pos + 1) : null;
-
-            final Request closest;
-            if (floor == null)
-                closest = higher;
-            else if (higher == null)
-                closest = floor;
-            else if (number - (floor.isAttended() ? floor.getDestinationFloor() : floor.getInitialFloor()) < (higher.isAttended() ? higher.getDestinationFloor() : higher.getInitialFloor()) - number)
-                closest = floor;
-            else
-                closest = higher;
-
-            if (closest == null)
-                return number;
-            else {
-                return closest.isAttended() ? closest.getDestinationFloor() : closest.getInitialFloor();
+            int closestRequestFloor = Integer.MIN_VALUE;
+            int bestDistance = Integer.MAX_VALUE;
+            for (Request request : internalRequests) {
+                if (request.isAttended()) {
+                    final int distance = Math.abs(number - request.getDestinationFloor());
+                    if (distance < bestDistance) {
+                        bestDistance = distance;
+                        closestRequestFloor = request.getDestinationFloor();
+                    }
+                } else {
+                    final int distance = Math.abs(number - request.getInitialFloor());
+                    if (distance < bestDistance) {
+                        bestDistance = distance;
+                        closestRequestFloor = request.getInitialFloor();
+                    }
+                }
             }
+
+            if (closestRequestFloor == Integer.MIN_VALUE)
+                return number;
+            else
+                return closestRequestFloor;
         }
 
         private void updateWeight(final int numPeople) {
@@ -158,28 +170,29 @@ public class Elevator extends Agent {
 
         private void peopleExit() {
             state = STOPPED;
+            final ArrayList<Request> newInternalRequests = new ArrayList<>(internalRequests.size());
             for (Request request : internalRequests) {
-                if (request.getDestinationFloor() == actualFloor) {
+                if (request.isAttended() && request.getDestinationFloor() == actualFloor) {
                     CommonFunctions.sleep(Timer.ONE_SECOND);    // exit time
-                    internalRequests.remove(request);
-                }
+                    numPeople--;
+                    updateInterface();
+                } else
+                    newInternalRequests.add(request);
             }
+            internalRequests = newInternalRequests;
+            updateInterface();
         }
 
         private void receiveRequests() {
             ACLMessage msg;
-            boolean received = false;
             while ((msg = receive(MessageTemplate.MatchProtocol(Building.agentType))) != null) {
                 addToInformation(myAgent.getName() + " msg: " + msg.getContent());
                 if (msg.getSender().getLocalName().startsWith(Building.agentType)) {
-                    received = true;
                     Request request = new Request(Integer.parseInt(msg.getContent()));
                     internalRequests.add(request);
                 } else
                     addToInformation("Invalid agent");
             }
-            if (received)
-                Collections.sort(internalRequests);
         }
 
         private void proposeRequestToOthers() {
@@ -321,7 +334,7 @@ public class Elevator extends Agent {
     private void updateInterface(int nextFloorToStop) {
         cleanOldInformation();
         final ArrayList<String> informationValues = new ArrayList<>(information.values());
-        final ElevatorState elevatorState = new ElevatorState(actualFloor, actualWeight, internalRequests.size(), state, informationValues, nextFloorToStop, maxWeight, movementTime);
+        final ElevatorState elevatorState = new ElevatorState(actualFloor, actualWeight, internalRequests.size(), state, informationValues, nextFloorToStop, numPeople, maxWeight, movementTime);
         final ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
         msg.setSender(this.getAID());
         msg.addReceiver(this.getAID(MyInterface.agentType));
