@@ -4,7 +4,7 @@ public class CommonFunctions {
         try {
             Thread.sleep(millis);
         } catch (InterruptedException e) {
-            //e.printStackTrace();
+            MyBoot.logger.warning(e.toString());
         }
     }
 }

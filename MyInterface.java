@@ -24,7 +24,7 @@ public class MyInterface extends Agent {
 
     private void display(final String str) {
         clearConsole();
-        System.out.println(str);
+        MyBoot.logger.info(str);
     }
 
     private String designScreen() {
@@ -52,9 +52,13 @@ public class MyInterface extends Agent {
         public void action() {
             while (true) {
                 ACLMessage msg;
-                while ((msg = receive(MessageTemplate.MatchProtocol(MyInterface.agentType))) != null)
+                boolean updated = false;
+                while ((msg = receive(MessageTemplate.MatchProtocol(MyInterface.agentType))) != null) {
                     elevatorMessages.put(msg.getSender(), msg.getContent());
-                display(designScreen());
+                    updated = true;
+                }
+                if (updated)
+                    display(designScreen());
                 CommonFunctions.sleep(Timer.ONE_SECOND);
             }
         }
