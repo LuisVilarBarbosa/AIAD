@@ -23,7 +23,6 @@ public class Building extends Agent {
     private final ArrayList<Long> movementTimes;
     private final Random random;
     private final ArrayList<AID> elevators;
-    private final ArrayList<DFAgentDescription> descriptions;
 
     public Building(final int numFloors, final int numElevators, final ArrayList<Integer> maxWeights, final ArrayList<Long> movementTimes) {
         super();
@@ -39,28 +38,10 @@ public class Building extends Agent {
         this.movementTimes = movementTimes;
         this.random = new Random();
         this.elevators = new ArrayList<>();
-        this.descriptions = new ArrayList<>();
     }
 
     protected void setup() {
         super.setup();
-        DFAgentDescription dfd = new DFAgentDescription();
-        Behaviour b = new SubscriptionInitiator(
-                this, DFService.createSubscriptionMessage(this, getDefaultDF(), dfd, null)) {
-            protected void handleInform(ACLMessage inform) {
-                try {
-                    DFAgentDescription[] dfds = DFService.decodeNotification(inform.getContent());
-                    for (DFAgentDescription d : dfds) {
-                        descriptions.add(d);
-                        //MyBoot.logger.info("Agent " + d.getName().getName() + " created by building.");
-                    }
-                } catch (FIPAException e) {
-                    e.printStackTrace();
-                }
-
-            }
-        };
-        addBehaviour(b);
         generateElevatorsAgents();
         addBehaviour(new BuildingBehaviour());
     }

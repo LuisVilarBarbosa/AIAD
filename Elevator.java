@@ -64,7 +64,6 @@ public class Elevator extends Agent {
             final int diff = nextFloorToStop - currentFloor;
             state.setMovementState(diff > 0 ? ElevatorState.GOING_UP : (diff < 0 ? ElevatorState.GOING_DOWN : ElevatorState.STOPPED));
             updateInterface(nextFloorToStop);
-            //addToInformation("Agent: " + this.getAgent().getAID().getLocalName() + " Floor: " + nextFloor + " AW: " + actualWeight + " MW: " + maxWeight);
             if (state.getMovementState() != ElevatorState.STOPPED)
                 CommonFunctions.sleep(properties.getMovementTime());
             updateFloorBasedOnMovementState();

@@ -1,6 +1,6 @@
 import jade.core.AID;
 import jade.core.Agent;
-import jade.core.behaviours.SimpleBehaviour;
+import jade.core.behaviours.CyclicBehaviour;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 
@@ -46,26 +46,19 @@ public class MyInterface extends Agent {
         }
     }
 
-    private class MyInterfaceBehaviour extends SimpleBehaviour {
+    private class MyInterfaceBehaviour extends CyclicBehaviour {
 
         @Override
         public void action() {
-            while (true) {
-                ACLMessage msg;
-                boolean updated = false;
-                while ((msg = receive(MessageTemplate.MatchProtocol(MyInterface.agentType))) != null) {
-                    elevatorMessages.put(msg.getSender(), msg.getContent());
-                    updated = true;
-                }
-                if (updated)
-                    display(designScreen());
-                CommonFunctions.sleep(Timer.ONE_SECOND);
+            ACLMessage msg;
+            boolean updated = false;
+            while ((msg = receive(MessageTemplate.MatchProtocol(MyInterface.agentType))) != null) {
+                elevatorMessages.put(msg.getSender(), msg.getContent());
+                updated = true;
             }
-        }
-
-        @Override
-        public boolean done() {
-            return false;
+            if (updated)
+                display(designScreen());
+            CommonFunctions.sleep(Timer.ONE_SECOND);
         }
     }
 }

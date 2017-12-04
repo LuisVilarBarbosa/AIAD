@@ -53,9 +53,9 @@ public class Request implements Comparable {
         Request r = (Request) o;
         if (this.attended && r.attended)
             return Integer.compare(this.destinationFloor, r.destinationFloor);
-        else if (this.attended && !r.attended)
+        else if (this.attended/* && !r.attended*/)
             return Integer.compare(this.destinationFloor, r.initialFloor);
-        else if (!this.attended && r.attended)
+        else if (/*!this.attended && */r.attended)
             return Integer.compare(this.initialFloor, r.destinationFloor);
         else
             return Integer.compare(this.initialFloor, r.initialFloor);
