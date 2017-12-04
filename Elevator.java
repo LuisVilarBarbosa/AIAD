@@ -46,7 +46,7 @@ public class Elevator extends Agent {
         try {
             DFService.register(this, dfd);
         } catch (FIPAException e) {
-            e.printStackTrace();
+            MyBoot.logger.warning(e.toString());
         }
         setupContractNetResponderBehaviour();
         updateInterface();
@@ -370,8 +370,8 @@ public class Elevator extends Agent {
 
     private boolean isBetween(int number, int v1, int v2) {
         if (v1 <= v2)
-            return v1 <= number && number <= v2;
+            return v1 < number && number < v2;
         else
-            return v2 <= number && number <= v1;
+            return v2 < number && number < v1;
     }
 }

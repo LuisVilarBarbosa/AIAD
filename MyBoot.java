@@ -37,12 +37,12 @@ public class MyBoot extends Boot {
      */
     public static void main(String[] args) {
         try {
-            FileHandler fh = new FileHandler(logger.getName() + ".log");
-            logger.addHandler(fh);
+            FileHandler fh = new FileHandler(MyBoot.logger.getName() + ".log");
+            MyBoot.logger.addHandler(fh);
             SimpleFormatter formatter = new SimpleFormatter();
             fh.setFormatter(formatter);
         } catch (IOException e) {
-            e.printStackTrace();
+            MyBoot.logger.warning(e.toString());
             System.exit(-1);
         }
 
@@ -99,16 +99,16 @@ public class MyBoot extends Boot {
                 final AgentController myInterfaceAC = containerController.acceptNewAgent(MyInterface.agentType, new MyInterface());
                 myInterfaceAC.start();
             } catch (StaleProxyException e) {
-                e.printStackTrace();
+                MyBoot.logger.warning(e.toString());
             }
         } catch (ProfileException pe) {
-            logger.warning("Error creating the Profile [" + pe.getMessage() + "]");
-            pe.printStackTrace();
+            MyBoot.logger.warning("Error creating the Profile [" + pe.getMessage() + "]");
+            MyBoot.logger.warning(pe.toString());
             printUsage();
             System.exit(-1);
         } catch (IllegalArgumentException iae) {
-            logger.warning("Command line arguments format error. " + iae.getMessage());
-            iae.printStackTrace();
+            MyBoot.logger.warning("Command line arguments format error. " + iae.getMessage());
+            MyBoot.logger.warning(iae.toString());
             printUsage();
             System.exit(-1);
         }
@@ -125,7 +125,7 @@ public class MyBoot extends Boot {
                 "  " + NUM_ELEVATORS_PARAMETER + "=" + DEFAULT_NUM_ELEVATORS + "\n" +
                 "  " + MAX_WEIGHT_PARAMETER + "=" + DEFAULT_MAX_WEIGHT + "\n" +
                 "  " + MOVEMENT_TIME_PARAMETER + "=" + DEFAULT_MOVEMENT_TIME + "\n\n";
-        logger.info(usage);
+        MyBoot.logger.info(usage);
         //Boot.printUsage();
     }
 }

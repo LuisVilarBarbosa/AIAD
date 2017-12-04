@@ -42,7 +42,7 @@ public class MyInterface extends Agent {
             else
                 Runtime.getRuntime().exec("clear");
         } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
+            MyBoot.logger.warning(e.toString());
         }
     }
 
