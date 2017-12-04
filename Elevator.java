@@ -11,10 +11,7 @@ import jade.proto.ContractNetInitiator;
 import jade.proto.ContractNetResponder;
 
 import javax.management.timer.Timer;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Random;
-import java.util.Vector;
+import java.util.*;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 public class Elevator extends Agent {
@@ -193,8 +190,9 @@ public class Elevator extends Agent {
         private void proposeRequestToOthers() {
             if (!internalRequests.isEmpty()) {
                 // TODO While setting the negotiation we need to implement a way to temporarily lock the request, so this is not attended.
-                final ACLMessage aclMessage = new ACLMessage(ACLMessage.INFORM);
+                final ACLMessage aclMessage = new ACLMessage(ACLMessage.CFP);
                 aclMessage.setProtocol(FIPANames.InteractionProtocol.FIPA_CONTRACT_NET);
+                aclMessage.setReplyByDate(new Date(System.currentTimeMillis() + Timer.ONE_SECOND));
                 aclMessage.setSender(myAgent.getAID());
                 for (int i = 0; i < nResponders; i++)
                     if (!myAgent.getAID().getLocalName().equals(Elevator.agentType + i))
@@ -292,23 +290,22 @@ public class Elevator extends Agent {
             protected ACLMessage handleCfp(ACLMessage cfp) throws NotUnderstoodException, RefuseException {
                 addToInformation("Agent " + getLocalName() + ": CFP received from " + cfp.getSender().getName() + ". Action is " + cfp.getContent());
                 ElevatorMessage proposedRequest = new ElevatorMessage(cfp.getContent());
+                ACLMessage propose = cfp.createReply();
+                propose.setProtocol(FIPANames.InteractionProtocol.FIPA_CONTRACT_NET);
                 long myTimeToInitialFloor = expectedTimeToFloor(proposedRequest.getInitialFloor());
                 if (myTimeToInitialFloor <= proposedRequest.getTimeToInitialFloor()) {
                     // We provide a proposal
                     addToInformation("Agent " + getLocalName() + ": Proposing " + myTimeToInitialFloor);
-                    ACLMessage propose = cfp.createReply();
                     propose.setPerformative(ACLMessage.PROPOSE);
-                    propose.setProtocol(FIPANames.InteractionProtocol.FIPA_CONTRACT_NET);
                     ElevatorMessage myPropose = new ElevatorMessage(proposedRequest.getInitialFloor(), proposedRequest.getDestinationFloor(), myTimeToInitialFloor);
                     propose.setContent(myPropose.toString());
-                    return propose;
                 } else {
                     // We refuse to provide a proposal
                     addToInformation("Agent " + getLocalName() + ": Refuse");
-                    return null;
+                    propose.setPerformative(ACLMessage.REFUSE);
                     //throw new RefuseException("evaluation-failed");
                 }
-
+                return propose;
             }
 
             protected ACLMessage handleAcceptProposal(ACLMessage cfp, ACLMessage propose, ACLMessage accept) throws FailureException {
