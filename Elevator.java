@@ -270,10 +270,10 @@ public class Elevator extends Agent {
         addBehaviour(new ContractNetResponder(this, template) {
 
             protected ACLMessage handleCfp(ACLMessage cfp) {
-                if (cfp.getReplyByDate().before(new Date()))
+                if (!cfp.getProtocol().equals(Elevator.agentType) && cfp.getReplyByDate().before(new Date()))
                     return null;
 
-                addToInformation(cfp.getSender().getLocalName() + "sent action " + cfp.getContent());
+                addToInformation(cfp.getSender().getLocalName() + " sent action " + cfp.getContent());
                 ElevatorMessage proposedRequest = new ElevatorMessage(cfp.getContent());
                 ACLMessage propose = cfp.createReply();
                 propose.setProtocol(FIPANames.InteractionProtocol.FIPA_CONTRACT_NET);
@@ -314,6 +314,7 @@ public class Elevator extends Agent {
 
     private void addToInformation(final String str) {
         information.put(System.currentTimeMillis(), str);
+        MyBoot.logger.info(str);    // to remove
     }
 
     private void cleanOldInformation() {
