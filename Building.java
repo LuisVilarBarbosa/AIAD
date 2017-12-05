@@ -63,7 +63,7 @@ public class Building extends Agent {
             final int n = random.nextInt() % (3 * numElevators);
             final ArrayList<Request> requests = generateNRequests(n);
             sendRequests(requests);
-            CommonFunctions.sleep(10 * Timer.ONE_SECOND);
+            CommonFunctions.sleep(10 * Timer.ONE_SECOND, this);
         }
 
         private void addRequest(final int floor, final ArrayList<Request> requests) {

@@ -52,7 +52,7 @@ public class Elevator extends Agent {
             state.setMovementState(diff > 0 ? ElevatorState.GOING_UP : (diff < 0 ? ElevatorState.GOING_DOWN : ElevatorState.STOPPED));
             updateInterface(nextFloorToStop);
             if (state.getMovementState() != ElevatorState.STOPPED)
-                CommonFunctions.sleep(properties.getMovementTime());
+                CommonFunctions.sleep(properties.getMovementTime(), this);
             updateFloorBasedOnMovementState();
             peopleExit();
             if (internalRequests.isEmpty()) {
@@ -73,7 +73,7 @@ public class Elevator extends Agent {
                         statistics.setMinWaitTime(waitTime);
                     if (waitTime > statistics.getMaxWaitTime())
                         statistics.setMaxWaitTime(waitTime);
-                    CommonFunctions.sleep(Timer.ONE_SECOND);// entrance time
+                    CommonFunctions.sleep(Timer.ONE_SECOND, this);// entrance time
                     statistics.setPeopleEntranceTime(statistics.getPeopleEntranceTime() + System.currentTimeMillis() - begin);
                     newPeople++;
                     state.setNumPeople(state.getNumPeople() + 1);
@@ -150,7 +150,7 @@ public class Elevator extends Agent {
             for (Request request : internalRequests) {
                 if (request.isAttended() && request.getDestinationFloor() == state.getCurrentFloor()) {
                     final long begin = System.currentTimeMillis();
-                    CommonFunctions.sleep(Timer.ONE_SECOND);    // exit time
+                    CommonFunctions.sleep(Timer.ONE_SECOND, this);    // exit time
                     statistics.setPeopleExitTime(statistics.getPeopleExitTime() + System.currentTimeMillis() - begin);
                     state.setNumPeople(state.getNumPeople() - 1);
                     updateInterface();
@@ -270,7 +270,7 @@ public class Elevator extends Agent {
         addBehaviour(new ContractNetResponder(this, template) {
 
             protected ACLMessage handleCfp(ACLMessage cfp) {
-                if (!cfp.getProtocol().equals(Elevator.agentType) && cfp.getReplyByDate().before(new Date()))
+                if (!cfp.getProtocol().equals(Elevator.agentType) || cfp.getReplyByDate().before(new Date()))
                     return null;
 
                 addToInformation(cfp.getSender().getLocalName() + " sent action " + cfp.getContent());
