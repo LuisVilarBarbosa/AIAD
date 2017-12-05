@@ -91,7 +91,7 @@ public class MyBoot extends Boot {
 
                 final AgentController buildingAC = containerController.acceptNewAgent(Building.agentType, new Building(numFloors, numElevators, maxWeights, movementTimes));
                 buildingAC.start();
-                final AgentController myInterfaceAC = containerController.acceptNewAgent(MyInterface.agentType, new MyInterface());
+                final AgentController myInterfaceAC = containerController.acceptNewAgent(MyInterface.agentType, new MyInterface(numElevators));
                 myInterfaceAC.start();
             } catch (StaleProxyException e) {
                 MyBoot.logger.warning(e.toString());

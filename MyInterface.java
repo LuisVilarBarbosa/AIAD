@@ -6,57 +6,47 @@ import jade.lang.acl.MessageTemplate;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.Map;
 import java.util.TreeMap;
 
 public class MyInterface extends Agent {
     public static final String agentType = "MyInterface";
     public static final String separator = "§";
-    private final String[] columnNames = {"", "Floor", "Weight", "NumRequests", "State", "NextFloorToStop", "NumPeople", "PeopleEntranceTime", "PeopleExitTime", "MinWaitTime", "MaxWaitTime", "MaxWeight", "MovementTime"};
+    private static final String jFrameTitle = "Elevator Management";
+    private static final String[] columnNames = {"", "Floor", "Weight", "NumRequests", "State", "NextFloorToStop", "NumPeople", "PeopleEntranceTime", "PeopleExitTime", "MinWaitTime", "MaxWaitTime", "MaxWeight", "MovementTime"};
+    private static final int preferredWidth = 1200;
+    private static final int preferredHeight = 400;
     private final TreeMap<AID, String[]> elevatorsData;
     private final JTable table;
+    private final JScrollPane jScrollPane;
 
-    public MyInterface() {
+    public MyInterface(final int numElevators) {
         this.elevatorsData = new TreeMap<>();
-        this.table = new JTable(new Object[3][columnNames.length], columnNames);
+        final JFrame jFrame = new JFrame(jFrameTitle);
+        final JPanel jPanel = new JPanel();
+        this.table = new JTable(new Object[numElevators][columnNames.length], columnNames);
+        this.jScrollPane = new JScrollPane(table);
+        final Container container = new Container();
+        final JTextField jTextField = new JTextField(columnNames.length);
+
+        jFrame.add(jPanel);
+        jFrame.setResizable(true);
+        jFrame.setVisible(true);
+        jFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        jPanel.add(this.jScrollPane);
+        this.jScrollPane.setPreferredSize(new Dimension(preferredWidth, preferredHeight));
         this.table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
-        this.table.doLayout();
+        jPanel.add(container);
+        container.add(jTextField);
 
-        JFrame maingui = new JFrame("Gui");
-        JButton enter = new JButton("Enter");
-        final JTextField movietext = new JTextField(columnNames.length);
-        final JScrollPane scrolll = new JScrollPane(table);
-        final JLabel titlee = new JLabel("Enter movie name here:");
-        final Container cont = new Container();
-        JPanel pangui = new JPanel();
-        JPanel pangui2 = new JPanel();
-        maingui.add(pangui2);
-        maingui.add(pangui);
-        maingui.setResizable(true);
-        maingui.setVisible(true);
-        pangui.add(scrolll);
-        pangui2.add(cont);
-        cont.add(titlee);
-        cont.add(movietext);
-        cont.add(enter);
-        scrolll.getPreferredSize();
-        maingui.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        maingui.pack();
-
-        enter.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                // create building
-            }
-        });
+        jFrame.pack();
     }
 
     @Override
     protected void setup() {
         super.setup();
         CommonFunctions.registerOnDFService(this, agentType);
+        addBehaviour(new UpdateGUIDimensionsBehaviour());
         addBehaviour(new MyInterfaceBehaviour());
     }
 
@@ -84,6 +74,14 @@ public class MyInterface extends Agent {
             }
             if (updated)
                 updateGUI();
+        }
+    }
+
+    private class UpdateGUIDimensionsBehaviour extends CyclicBehaviour {
+
+        @Override
+        public void action() {
+            jScrollPane.setPreferredSize(jScrollPane.getParent().getSize());
         }
     }
 }
