@@ -322,24 +322,22 @@ public class Elevator extends Agent {
                 information.remove(keyMillis);
     }
 
-    private String stateString(int nextFloorToStop) {
+    private String stateString(final int nextFloorToStop) {
         final StringBuilder sb = new StringBuilder();
-        sb.append(this.getAID().getLocalName()).append(":\n");
-        sb.append("\tFloor=").append(state.getCurrentFloor());
-        sb.append(" Weight=").append(state.getCurrentWeight());
-        sb.append(" NumRequests=").append(internalRequests.size());
-        sb.append(" State=").append(ElevatorState.getMovementStateString(state.getMovementState())).append("\n");
-        sb.append("\tNextFloorToStop=").append(nextFloorToStop);
-        sb.append(" NumPeople=").append(state.getNumPeople()).append("\n");
-        sb.append("\tPeopleEntranceTime=").append(statistics.getPeopleEntranceTime());
-        sb.append(" PeopleExitTime=").append(statistics.getPeopleExitTime()).append("\n");
-        sb.append("\tMinWaitTime=").append(statistics.getMinWaitTime());
-        sb.append(" MaxWaitTime=").append(statistics.getMaxWaitTime()).append("\n");
-        sb.append("\tMaxWeight=").append(properties.getMaxWeight());
-        sb.append(" MovementTime=").append(properties.getMovementTime()).append("\n");
+        sb.append(state.getCurrentFloor());
+        sb.append(MyInterface.separator).append(state.getCurrentWeight());
+        sb.append(MyInterface.separator).append(internalRequests.size());
+        sb.append(MyInterface.separator).append(ElevatorState.getMovementStateString(state.getMovementState()));
+        sb.append(MyInterface.separator).append(nextFloorToStop);
+        sb.append(MyInterface.separator).append(state.getNumPeople());
+        sb.append(MyInterface.separator).append(statistics.getPeopleEntranceTime());
+        sb.append(MyInterface.separator).append(statistics.getPeopleExitTime());
+        sb.append(MyInterface.separator).append(statistics.getMinWaitTime());
+        sb.append(MyInterface.separator).append(statistics.getMaxWaitTime());
+        sb.append(MyInterface.separator).append(properties.getMaxWeight());
+        sb.append(MyInterface.separator).append(properties.getMovementTime());
         for (final String info : information.values())
-            sb.append("\t").append(info).append("\n");
-        sb.append("\n");
+            sb.append(MyInterface.separator).append(info);
         return sb.toString();
     }
 
