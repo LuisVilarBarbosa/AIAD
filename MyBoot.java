@@ -41,12 +41,7 @@ public class MyBoot extends Boot {
             MyBoot.logger.addHandler(fh);
             SimpleFormatter formatter = new SimpleFormatter();
             fh.setFormatter(formatter);
-        } catch (IOException e) {
-            MyBoot.logger.warning(e.toString());
-            System.exit(-1);
-        }
 
-        try {
             // Create the Profile
             final ProfileImpl p;
             final ContainerController containerController;
@@ -110,6 +105,9 @@ public class MyBoot extends Boot {
             MyBoot.logger.warning("Command line arguments format error. " + iae.getMessage());
             MyBoot.logger.warning(iae.toString());
             printUsage();
+            System.exit(-1);
+        } catch (IOException e) {
+            MyBoot.logger.warning(e.toString());
             System.exit(-1);
         }
     }

@@ -19,6 +19,7 @@ public class MyInterface extends Agent {
     @Override
     protected void setup() {
         super.setup();
+        CommonFunctions.registerOnDFService(this, agentType);
         addBehaviour(new MyInterfaceBehaviour());
     }
 

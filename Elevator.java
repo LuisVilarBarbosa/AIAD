@@ -1,9 +1,6 @@
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
-import jade.domain.DFService;
-import jade.domain.FIPAAgentManagement.*;
-import jade.domain.FIPAException;
 import jade.domain.FIPANames;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
@@ -36,18 +33,8 @@ public class Elevator extends Agent {
 
     public void setup() {
         super.setup();
+        CommonFunctions.registerOnDFService(this, agentType);
         addBehaviour(new ElevatorBehaviour());
-        DFAgentDescription dfd = new DFAgentDescription();
-        dfd.setName(getAID());
-        ServiceDescription sd = new ServiceDescription();
-        sd.setName(getName());
-        sd.setType(agentType);
-        dfd.addServices(sd);
-        try {
-            DFService.register(this, dfd);
-        } catch (FIPAException e) {
-            MyBoot.logger.warning(e.toString());
-        }
         setupContractNetResponderBehaviour();
         updateInterface();
     }
@@ -191,7 +178,7 @@ public class Elevator extends Agent {
                 // TODO While setting the negotiation we need to implement a way to temporarily lock the request, so this is not attended.
                 final ACLMessage aclMessage = new ACLMessage(ACLMessage.CFP);
                 aclMessage.setProtocol(FIPANames.InteractionProtocol.FIPA_CONTRACT_NET);
-                aclMessage.setReplyByDate(new Date(System.currentTimeMillis() + Timer.ONE_SECOND));
+                aclMessage.setReplyByDate(new Date(System.currentTimeMillis() + 2 * Timer.ONE_SECOND));
                 aclMessage.setSender(myAgent.getAID());
                 for (int i = 0; i < nResponders; i++)
                     if (!myAgent.getAID().getLocalName().equals(Elevator.agentType + i))
@@ -282,7 +269,10 @@ public class Elevator extends Agent {
         MessageTemplate template = MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_CONTRACT_NET);
         addBehaviour(new ContractNetResponder(this, template) {
 
-            protected ACLMessage handleCfp(ACLMessage cfp) throws NotUnderstoodException, RefuseException {
+            protected ACLMessage handleCfp(ACLMessage cfp) {
+                if (cfp.getReplyByDate().before(new Date()))
+                    return null;
+
                 addToInformation(cfp.getSender().getLocalName() + "sent action " + cfp.getContent());
                 ElevatorMessage proposedRequest = new ElevatorMessage(cfp.getContent());
                 ACLMessage propose = cfp.createReply();
@@ -300,7 +290,7 @@ public class Elevator extends Agent {
                 return propose;
             }
 
-            protected ACLMessage handleAcceptProposal(ACLMessage cfp, ACLMessage propose, ACLMessage accept) throws FailureException {
+            protected ACLMessage handleAcceptProposal(ACLMessage cfp, ACLMessage propose, ACLMessage accept) {
                 addToInformation(cfp.getSender().getLocalName() + " sent request added");
                 internalRequests.add(new Request(cfp.getContent()));
                 return null;

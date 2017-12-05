@@ -1,12 +1,7 @@
 import jade.core.AID;
 import jade.core.Agent;
-import jade.core.behaviours.Behaviour;
 import jade.core.behaviours.CyclicBehaviour;
-import jade.domain.DFService;
-import jade.domain.FIPAAgentManagement.DFAgentDescription;
-import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
-import jade.proto.SubscriptionInitiator;
 import jade.wrapper.AgentContainer;
 import jade.wrapper.AgentController;
 import jade.wrapper.StaleProxyException;
@@ -42,6 +37,7 @@ public class Building extends Agent {
 
     protected void setup() {
         super.setup();
+        CommonFunctions.registerOnDFService(this, agentType);
         generateElevatorsAgents();
         addBehaviour(new BuildingBehaviour());
     }
