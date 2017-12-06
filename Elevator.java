@@ -314,7 +314,7 @@ public class Elevator extends Agent {
 
     private void addToInformation(final String str) {
         information.put(System.currentTimeMillis(), str);
-        MyBoot.logger.info(str);    // to remove
+        System.out.println(str);    // to remove
     }
 
     private void cleanOldInformation() {

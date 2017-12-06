@@ -8,11 +8,7 @@ import jade.wrapper.AgentController;
 import jade.wrapper.ContainerController;
 import jade.wrapper.StaleProxyException;
 
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.logging.FileHandler;
-import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
 
 // Some info about JADE agents in https://pt.slideshare.net/AryanRathore4/all-about-agents-jade
 
@@ -27,7 +23,6 @@ public class MyBoot extends Boot {
     private static final String DEFAULT_NUM_ELEVATORS = "5";
     private static final String DEFAULT_MAX_WEIGHT = "500";
     private static final String DEFAULT_MOVEMENT_TIME = "1000";
-    public static Logger logger = Logger.getLogger(MyBoot.class.getName());
 
     /**
      * Fires up the <b><em>JADE</em></b> system.
@@ -37,11 +32,6 @@ public class MyBoot extends Boot {
      */
     public static void main(String[] args) {
         try {
-            FileHandler fh = new FileHandler(MyBoot.logger.getName() + ".log");
-            MyBoot.logger.addHandler(fh);
-            SimpleFormatter formatter = new SimpleFormatter();
-            fh.setFormatter(formatter);
-
             // Create the Profile
             final ProfileImpl p;
             final ContainerController containerController;
@@ -94,20 +84,16 @@ public class MyBoot extends Boot {
                 final AgentController myInterfaceAC = containerController.acceptNewAgent(MyInterface.agentType, new MyInterface(numElevators));
                 myInterfaceAC.start();
             } catch (StaleProxyException e) {
-                MyBoot.logger.warning(e.toString());
+                e.printStackTrace();
             }
         } catch (ProfileException pe) {
-            MyBoot.logger.warning("Error creating the Profile [" + pe.getMessage() + "]");
-            MyBoot.logger.warning(pe.toString());
-            printUsage();
+            System.err.println("Error creating the Profile [" + pe.getMessage() + "]");
+            pe.printStackTrace();
             System.exit(-1);
         } catch (IllegalArgumentException iae) {
-            MyBoot.logger.warning("Command line arguments format error. " + iae.getMessage());
-            MyBoot.logger.warning(iae.toString());
+            System.err.println("Command line arguments format error. " + iae.getMessage());
+            iae.printStackTrace();
             printUsage();
-            System.exit(-1);
-        } catch (IOException e) {
-            MyBoot.logger.warning(e.toString());
             System.exit(-1);
         }
     }
@@ -122,8 +108,9 @@ public class MyBoot extends Boot {
                 "  " + NUM_FLOORS_PARAMETER + "=" + DEFAULT_NUM_FLOORS + "\n" +
                 "  " + NUM_ELEVATORS_PARAMETER + "=" + DEFAULT_NUM_ELEVATORS + "\n" +
                 "  " + MAX_WEIGHT_PARAMETER + "=" + DEFAULT_MAX_WEIGHT + "\n" +
-                "  " + MOVEMENT_TIME_PARAMETER + "=" + DEFAULT_MOVEMENT_TIME + "\n\n";
-        MyBoot.logger.info(usage);
-        //Boot.printUsage();
+                "  " + MOVEMENT_TIME_PARAMETER + "=" + DEFAULT_MOVEMENT_TIME + "\n\n" +
+                "Additional options (MyBoot extends Boot):\n";
+        System.out.print(usage);
+        Boot.printUsage();
     }
 }

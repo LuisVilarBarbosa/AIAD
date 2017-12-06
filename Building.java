@@ -52,7 +52,7 @@ public class Building extends Agent {
                 ac.start();
                 elevators.add(elevator.getAID());
             } catch (StaleProxyException e) {
-                MyBoot.logger.warning(e.toString());
+                e.printStackTrace();
             }
     }
 

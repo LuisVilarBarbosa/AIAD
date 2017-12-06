@@ -24,7 +24,7 @@ public class CommonFunctions {
         try {
             DFService.register(agent, dfd);
         } catch (FIPAException e) {
-            MyBoot.logger.warning(e.toString());
+            e.printStackTrace();
         }
     }
 }
