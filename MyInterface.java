@@ -13,7 +13,7 @@ public class MyInterface extends Agent {
     public static final String agentType = "MyInterface";
     public static final String separator = "§";
     private static final String jFrameTitle = "Elevator Management";
-    private static final String[] columnNames = {"", "Floor", "Weight", "Num. requests", "State", "Next floor to stop", "Num. people", "CFPs sent", "Proposes sent", "Refuses sent", "Accepted proposals sent", "Accepted proposals received", "People entrance time", "People exit time", "Min. wait time", "Max. wait time", "Uptime", "Downtime", "Use rate", "Max. weight", "Movement time"};
+    private static final String[] columnNames = {"", "Floor", "Weight", "Num. requests", "State", "Next floor to stop", "Num. people", "CFPs sent", "Proposes sent", "Refuses sent", "Accepted proposals sent", "Accepted proposals received", "People entrance time", "People exit time", "Min. wait time", "Max. wait time", "Uptime", "Downtime", "Use rate", "Max. weight", "Movement time", "Person entrance time", "Person exit time", "Has keyboard on request"};
     private static final int preferredWidth = 1200;
     private static final int preferredHeight = 400;
     private final TreeMap<AID, String[]> elevatorsData;

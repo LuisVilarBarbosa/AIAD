@@ -73,7 +73,7 @@ public class Elevator extends Agent {
                         statistics.setMinWaitTime(waitTime);
                     if (waitTime > statistics.getMaxWaitTime())
                         statistics.setMaxWaitTime(waitTime);
-                    CommonFunctions.sleep(Timer.ONE_SECOND, this);// entrance time
+                    CommonFunctions.sleep(properties.getPersonEntranceTime(), this);
                     statistics.setPeopleEntranceTime(statistics.getPeopleEntranceTime() + System.currentTimeMillis() - begin);
                     newPeople++;
                     state.setNumPeople(state.getNumPeople() + 1);
@@ -162,7 +162,7 @@ public class Elevator extends Agent {
             for (Request request : internalRequests) {
                 if (request.isAttended() && request.getDestinationFloor() == state.getCurrentFloor()) {
                     final long begin = System.currentTimeMillis();
-                    CommonFunctions.sleep(Timer.ONE_SECOND, this);    // exit time
+                    CommonFunctions.sleep(properties.getPersonExitTime(), this);
                     statistics.setPeopleExitTime(statistics.getPeopleExitTime() + System.currentTimeMillis() - begin);
                     state.setNumPeople(state.getNumPeople() - 1);
                     updateInterface();
@@ -362,6 +362,9 @@ public class Elevator extends Agent {
         sb.append(MyInterface.separator).append(statistics.getUseRate());
         sb.append(MyInterface.separator).append(properties.getMaxWeight());
         sb.append(MyInterface.separator).append(properties.getMovementTime());
+        sb.append(MyInterface.separator).append(properties.getPersonEntranceTime());
+        sb.append(MyInterface.separator).append(properties.getPersonExitTime());
+        sb.append(MyInterface.separator).append(ElevatorProperties.getHasKeyboardOnRequestString(properties.hasKeyboardOnRequest()));
         for (final String info : information.values())
             sb.append(MyInterface.separator).append(info);
         return sb.toString();
