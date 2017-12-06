@@ -19,6 +19,7 @@ public class Elevator extends Agent {
     private ArrayList<Request> internalRequests;
     private final ConcurrentSkipListMap<Long, String> information;
     private final ElevatorStatistics statistics;
+    private final long startupTime;
     private final int nResponders = 3;    // to remove
 
     public Elevator(final ElevatorProperties properties) {
@@ -29,6 +30,7 @@ public class Elevator extends Agent {
         this.internalRequests = new ArrayList<>();
         this.information = new ConcurrentSkipListMap<>();
         this.statistics = new ElevatorStatistics();
+        this.startupTime = System.currentTimeMillis();
     }
 
     public void setup() {
@@ -51,9 +53,7 @@ public class Elevator extends Agent {
             final int diff = nextFloorToStop - currentFloor;
             state.setMovementState(diff > 0 ? ElevatorState.GOING_UP : (diff < 0 ? ElevatorState.GOING_DOWN : ElevatorState.STOPPED));
             updateInterface(nextFloorToStop);
-            if (state.getMovementState() != ElevatorState.STOPPED)
-                CommonFunctions.sleep(properties.getMovementTime(), this);
-            updateFloorBasedOnMovementState();
+            moveOneFloor();
             peopleExit();
             if (internalRequests.isEmpty()) {
                 state.setCurrentWeight(0);
@@ -127,6 +127,18 @@ public class Elevator extends Agent {
                 nextCurrentWeight = state.getCurrentWeight() + newWeight;
             } while (nextCurrentWeight < 0 || nextCurrentWeight > properties.getMaxWeight());
             state.setCurrentWeight(nextCurrentWeight);
+        }
+
+        private void moveOneFloor() {
+            if (state.getMovementState() != ElevatorState.STOPPED) {
+                final long begin = System.currentTimeMillis();
+                CommonFunctions.sleep(properties.getMovementTime(), this);
+                statistics.setUptime(statistics.getUptime() + System.currentTimeMillis() - begin);
+                statistics.setDowntime(System.currentTimeMillis() - startupTime - statistics.getUptime());
+                statistics.setUseRate(statistics.getUptime() * 100.0 / (statistics.getUptime() + statistics.getDowntime()));
+            }
+            updateFloorBasedOnMovementState();
+            updateInterface();
         }
 
         private void updateFloorBasedOnMovementState() {
@@ -204,6 +216,7 @@ public class Elevator extends Agent {
                     aclMessage.setContent(elevatorMessage.toString());
                     addToInformation(myAgent.getAID().getLocalName() + " informing " + elevatorMessage.toString());
                     setupContractNetInitiatorBehaviour(aclMessage);
+                    statistics.setCFPsSent(statistics.getCFPsSent() + 1);
                 }
             }
         }
@@ -260,6 +273,7 @@ public class Elevator extends Agent {
                     addToInformation("Accepting proposal " + bestProposal + " from responder " + bestProposer.getLocalName());
                     accept.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
                     internalRequests.remove(new Request(acceptedRequest.getInitialFloor()));
+                    statistics.setAcceptedProposalsSent(statistics.getAcceptedProposalsSent() + 1);
                 }
             }
         });
@@ -283,9 +297,11 @@ public class Elevator extends Agent {
                     propose.setPerformative(ACLMessage.PROPOSE);
                     ElevatorMessage myPropose = new ElevatorMessage(proposedRequest.getInitialFloor(), proposedRequest.getDestinationFloor(), myTimeToInitialFloor);
                     propose.setContent(myPropose.toString());
+                    statistics.setProposesSent(statistics.getProposesSent() + 1);
                 } else {
                     addToInformation(cfp.getSender().getLocalName() + " sent request refused");
                     propose.setPerformative(ACLMessage.REFUSE);
+                    statistics.setRefusesSent(statistics.getRefusesSent() + 1);
                 }
                 return propose;
             }
@@ -293,6 +309,7 @@ public class Elevator extends Agent {
             protected ACLMessage handleAcceptProposal(ACLMessage cfp, ACLMessage propose, ACLMessage accept) {
                 addToInformation(cfp.getSender().getLocalName() + " sent request added");
                 internalRequests.add(new Request(cfp.getContent()));
+                statistics.setAcceptedProposalsReceived(statistics.getAcceptedProposalsReceived() + 1);
                 return null;
             }
         });
@@ -331,10 +348,18 @@ public class Elevator extends Agent {
         sb.append(MyInterface.separator).append(ElevatorState.getMovementStateString(state.getMovementState()));
         sb.append(MyInterface.separator).append(nextFloorToStop);
         sb.append(MyInterface.separator).append(state.getNumPeople());
+        sb.append(MyInterface.separator).append(statistics.getCFPsSent());
+        sb.append(MyInterface.separator).append(statistics.getProposesSent());
+        sb.append(MyInterface.separator).append(statistics.getRefusesSent());
+        sb.append(MyInterface.separator).append(statistics.getAcceptedProposalsSent());
+        sb.append(MyInterface.separator).append(statistics.getAcceptedProposalsReceived());
         sb.append(MyInterface.separator).append(statistics.getPeopleEntranceTime());
         sb.append(MyInterface.separator).append(statistics.getPeopleExitTime());
         sb.append(MyInterface.separator).append(statistics.getMinWaitTime());
         sb.append(MyInterface.separator).append(statistics.getMaxWaitTime());
+        sb.append(MyInterface.separator).append(statistics.getUptime());
+        sb.append(MyInterface.separator).append(statistics.getDowntime());
+        sb.append(MyInterface.separator).append(statistics.getUseRate());
         sb.append(MyInterface.separator).append(properties.getMaxWeight());
         sb.append(MyInterface.separator).append(properties.getMovementTime());
         for (final String info : information.values())
