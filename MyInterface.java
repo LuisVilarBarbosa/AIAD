@@ -1,5 +1,4 @@
 import jade.core.AID;
-import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
@@ -9,7 +8,7 @@ import java.awt.*;
 import java.util.Map;
 import java.util.TreeMap;
 
-public class MyInterface extends Agent {
+public class MyInterface extends MyAgent {
     public static final String agentType = "MyInterface";
     public static final String separator = "§";
     private static final String jFrameTitle = "Elevator Management";
@@ -53,7 +52,7 @@ public class MyInterface extends Agent {
     @Override
     protected void takeDown() {
         super.takeDown();
-        CommonFunctions.deregisterOnDFService(this);
+        deregisterOnDFService();
     }
 
     private void updateGUI() {

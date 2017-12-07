@@ -1,5 +1,4 @@
 import jade.core.AID;
-import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.lang.acl.ACLMessage;
 import jade.wrapper.AgentContainer;
@@ -9,7 +8,7 @@ import jade.wrapper.StaleProxyException;
 import java.util.ArrayList;
 import java.util.Random;
 
-public class Building extends Agent {
+public class Building extends MyAgent {
     public static final String agentType = "Building";
     private final int numFloors;
     private final int numElevators;
@@ -47,7 +46,7 @@ public class Building extends Agent {
     @Override
     protected void setup() {
         super.setup();
-        CommonFunctions.registerOnDFService(this, agentType);
+        registerOnDFService(agentType);
         generateElevatorsAgents();
         addBehaviour(new BuildingBehaviour());
     }
@@ -55,7 +54,7 @@ public class Building extends Agent {
     @Override
     protected void takeDown() {
         super.takeDown();
-        CommonFunctions.deregisterOnDFService(this);
+        deregisterOnDFService();
     }
 
     private void generateElevatorsAgents() {
@@ -81,9 +80,9 @@ public class Building extends Agent {
                 final ArrayList<Request> requests = generateNRequests(numRequests);
                 sendRequests(requests);
                 endBlock = System.currentTimeMillis() + reqGenInterval;
-                CommonFunctions.block(reqGenInterval, this);
+                blockBehaviour(reqGenInterval, this);
             } else
-                CommonFunctions.block(endBlock - System.currentTimeMillis(), this);
+                blockBehaviour(endBlock - System.currentTimeMillis(), this);
         }
 
         private int generateRandomFloor() {

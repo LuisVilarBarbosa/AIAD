@@ -5,30 +5,30 @@ import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
 
-public class CommonFunctions {
+public class MyAgent extends Agent {
 
-    public static void block(final long millis, Behaviour behaviour) {
+    protected void blockBehaviour(final long millis, Behaviour behaviour) {
         if (millis > 0)
             behaviour.block(millis);
     }
 
-    public static void registerOnDFService(final Agent agent, final String agentType) {
+    protected void registerOnDFService(final String agentType) {
         DFAgentDescription dfd = new DFAgentDescription();
-        dfd.setName(agent.getAID());
+        dfd.setName(this.getAID());
         ServiceDescription sd = new ServiceDescription();
-        sd.setName(agent.getName());
+        sd.setName(this.getName());
         sd.setType(agentType);
         dfd.addServices(sd);
         try {
-            DFService.register(agent, dfd);
+            DFService.register(this, dfd);
         } catch (FIPAException e) {
             e.printStackTrace();
         }
     }
 
-    public static void deregisterOnDFService(final Agent agent) {
+    protected void deregisterOnDFService() {
         try {
-            DFService.deregister(agent);
+            DFService.deregister(this);
         } catch (FIPAException e) {
             e.printStackTrace();
         }

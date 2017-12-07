@@ -1,5 +1,4 @@
 import jade.core.AID;
-import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.domain.FIPANames;
 import jade.lang.acl.ACLMessage;
@@ -11,7 +10,7 @@ import javax.management.timer.Timer;
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListMap;
 
-public class Elevator extends Agent {
+public class Elevator extends MyAgent {
     public static final String agentType = "Elevator";
     private final ElevatorProperties properties;
     private final ElevatorState state;
@@ -36,7 +35,7 @@ public class Elevator extends Agent {
     @Override
     public void setup() {
         super.setup();
-        CommonFunctions.registerOnDFService(this, agentType);
+        registerOnDFService(agentType);
         addBehaviour(new ElevatorBehaviour());
         setupContractNetResponderBehaviour();
         updateInterface();
@@ -45,7 +44,7 @@ public class Elevator extends Agent {
     @Override
     protected void takeDown() {
         super.takeDown();
-        CommonFunctions.deregisterOnDFService(this);
+        deregisterOnDFService();
     }
 
     private class ElevatorBehaviour extends CyclicBehaviour {
@@ -59,7 +58,7 @@ public class Elevator extends Agent {
         public void action() {
             final long currentMillis = System.currentTimeMillis();
             if (endBlock >= currentMillis) {
-                CommonFunctions.block(endBlock - currentMillis, this);
+                blockBehaviour(endBlock - currentMillis, this);
                 return;
             }
 
@@ -129,7 +128,7 @@ public class Elevator extends Agent {
                             if (waitTime > statistics.getMaxWaitTime())
                                 statistics.setMaxWaitTime(waitTime);
                             endBlock = System.currentTimeMillis() + properties.getPersonEntranceTime();
-                            CommonFunctions.block(properties.getPersonEntranceTime(), this);
+                            blockBehaviour(properties.getPersonEntranceTime(), this);
                             break;
                         case 1:
                             statistics.setPeopleEntranceTime(statistics.getPeopleEntranceTime() + System.currentTimeMillis() - begin);
@@ -200,7 +199,7 @@ public class Elevator extends Agent {
                 case 0:
                     begin = System.currentTimeMillis();
                     endBlock = System.currentTimeMillis() + properties.getMovementTime();
-                    CommonFunctions.block(properties.getMovementTime(), this);
+                    blockBehaviour(properties.getMovementTime(), this);
                     break;
                 case 1:
                     updateFloorBasedOnMovementState();
@@ -241,7 +240,7 @@ public class Elevator extends Agent {
                         case 0:
                             begin = System.currentTimeMillis();
                             endBlock = System.currentTimeMillis() + properties.getPersonExitTime();
-                            CommonFunctions.block(properties.getPersonExitTime(), this);
+                            blockBehaviour(properties.getPersonExitTime(), this);
                             break;
                         case 1:
                             internalRequests.remove(cyclePos);
