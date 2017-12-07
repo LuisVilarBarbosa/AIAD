@@ -63,6 +63,9 @@ public class Elevator extends Agent {
                 return;
             }
 
+            /*if(myAgent.getAID().getLocalName().equals("Elevator1"))
+                System.err.println(FSMstate + " " + cyclePos + " " + cycleState);*/
+
             switch (FSMstate) {
                 case 0:
                     receiveRequests();
@@ -138,7 +141,7 @@ public class Elevator extends Agent {
                             cyclePos++;
                             break;
                         default:
-                            System.out.println("Shouldn't be here.");
+                            System.err.println("Shouldn't be here.");
                     }
                     cycleState = (cycleState + 1) % 2;
                     break;
@@ -201,6 +204,7 @@ public class Elevator extends Agent {
                     break;
                 case 1:
                     updateFloorBasedOnMovementState();
+                    state.setMovementState(ElevatorState.STOPPED);
                     statistics.setUptime(statistics.getUptime() + System.currentTimeMillis() - begin);
                     statistics.setDowntime(System.currentTimeMillis() - startupTime - statistics.getUptime());
                     statistics.setUseRate(statistics.getUptime() * 100.0 / (statistics.getUptime() + statistics.getDowntime()));
