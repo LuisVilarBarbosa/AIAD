@@ -44,11 +44,18 @@ public class Building extends Agent {
         this.numRequestsPerInterval = numRequestsPerInterval;
     }
 
+    @Override
     protected void setup() {
         super.setup();
         CommonFunctions.registerOnDFService(this, agentType);
         generateElevatorsAgents();
         addBehaviour(new BuildingBehaviour());
+    }
+
+    @Override
+    protected void takeDown() {
+        super.takeDown();
+        CommonFunctions.deregisterOnDFService(this);
     }
 
     private void generateElevatorsAgents() {

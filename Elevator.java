@@ -33,12 +33,19 @@ public class Elevator extends Agent {
         this.startupTime = System.currentTimeMillis();
     }
 
+    @Override
     public void setup() {
         super.setup();
         CommonFunctions.registerOnDFService(this, agentType);
         addBehaviour(new ElevatorBehaviour());
         setupContractNetResponderBehaviour();
         updateInterface();
+    }
+
+    @Override
+    protected void takeDown() {
+        super.takeDown();
+        CommonFunctions.deregisterOnDFService(this);
     }
 
     private class ElevatorBehaviour extends CyclicBehaviour {

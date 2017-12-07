@@ -9,7 +9,7 @@ public class CommonFunctions {
 
     public static void sleep(final long millis, Behaviour behaviour) {
         long endMillis = System.currentTimeMillis() + millis;
-        behaviour.block(millis);
+        behaviour.block(millis);    // does not work as expected
         while (System.currentTimeMillis() <= endMillis)
             behaviour.block(endMillis - System.currentTimeMillis());
     }
@@ -23,6 +23,14 @@ public class CommonFunctions {
         dfd.addServices(sd);
         try {
             DFService.register(agent, dfd);
+        } catch (FIPAException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void deregisterOnDFService(final Agent agent) {
+        try {
+            DFService.deregister(agent);
         } catch (FIPAException e) {
             e.printStackTrace();
         }

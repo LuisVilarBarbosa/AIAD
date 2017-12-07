@@ -50,6 +50,12 @@ public class MyInterface extends Agent {
         addBehaviour(new MyInterfaceBehaviour());
     }
 
+    @Override
+    protected void takeDown() {
+        super.takeDown();
+        CommonFunctions.deregisterOnDFService(this);
+    }
+
     private void updateGUI() {
         int i = 0;
         for (Map.Entry<AID, String[]> entry : elevatorsData.entrySet()) {
