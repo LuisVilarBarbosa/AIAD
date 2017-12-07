@@ -44,7 +44,7 @@ public class MyInterface extends MyAgent {
     @Override
     protected void setup() {
         super.setup();
-        CommonFunctions.registerOnDFService(this, agentType);
+        registerOnDFService(agentType);
         addBehaviour(new UpdateGUIDimensionsBehaviour());
         addBehaviour(new MyInterfaceBehaviour());
     }
