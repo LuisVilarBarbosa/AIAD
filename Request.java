@@ -5,21 +5,12 @@ public class Request implements Comparable {
     private final long creationTime;
 
     public Request(final int initialFloor) {
-        this.initialFloor = initialFloor;
-        this.destinationFloor = this.initialFloor; // assumption
-        this.attended = false;
-        this.creationTime = System.currentTimeMillis();
+        this(initialFloor, initialFloor /*assumption*/);
     }
 
-    public Request(final String vars) {
-        final String[] splitVars = vars.split(" ");
-        if (splitVars.length != 1 && splitVars.length != 2)
-            throw new IllegalArgumentException();
-        this.initialFloor = Integer.parseInt(splitVars[0]);
-        if (splitVars.length > 1)
-            this.destinationFloor = Integer.parseInt(splitVars[1]);
-        else
-            this.destinationFloor = this.initialFloor; // assumption
+    public Request(final int initialFloor, final int destinationFloor) {
+        this.initialFloor = initialFloor;
+        this.destinationFloor = destinationFloor;
         this.attended = false;
         this.creationTime = System.currentTimeMillis();
     }

@@ -334,7 +334,7 @@ public class Elevator extends Agent {
                     addToInformation("Timeout expired: missing " + (nResponders - responses.size()) + " responses");
                 }
                 // Evaluate proposals.
-                long bestProposal = -1;
+                long bestProposal = Long.MAX_VALUE;
                 AID bestProposer = null;
                 ACLMessage accept = null;
                 ElevatorMessage acceptedRequest = null;
@@ -397,7 +397,8 @@ public class Elevator extends Agent {
             protected ACLMessage handleAcceptProposal(ACLMessage cfp, ACLMessage propose, ACLMessage accept) {
                 // Verify performative
                 addToInformation(cfp.getSender().getLocalName() + " sent request added");
-                internalRequests.add(new Request(cfp.getContent()));
+                ElevatorMessage elevatorMessage = new ElevatorMessage(cfp.getContent());
+                internalRequests.add(new Request(elevatorMessage.getInitialFloor(), elevatorMessage.getDestinationFloor()));
                 statistics.setAcceptedProposalsReceived(statistics.getAcceptedProposalsReceived() + 1);
                 return null;
             }
@@ -420,7 +421,7 @@ public class Elevator extends Agent {
 
     private void addToInformation(final String str) {
         information.put(System.currentTimeMillis(), str);
-        System.out.println(str);    // to remove
+        //System.out.println(str);    // to remove
     }
 
     private void cleanOldInformation() {
