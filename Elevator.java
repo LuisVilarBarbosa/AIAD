@@ -67,9 +67,14 @@ public class Elevator extends Agent {
                 case 0:
                     receiveRequests();
                     proposeRequestToOthers();
+                    FSMstate = (FSMstate + 1) % 6;
                     break;
                 case 1:
                     peopleEntrance();
+                    if (cyclePos >= internalRequests.size()) {
+                        FSMstate = (FSMstate + 1) % 6;
+                        cyclePos = 0;
+                    }
                     break;
                 case 2:
                     final int currentFloor = state.getCurrentFloor();
@@ -77,12 +82,20 @@ public class Elevator extends Agent {
                     final int diff = nextFloorToStop - currentFloor;
                     state.setMovementState(diff > 0 ? ElevatorState.GOING_UP : (diff < 0 ? ElevatorState.GOING_DOWN : ElevatorState.STOPPED));
                     updateInterface(nextFloorToStop);
+                    FSMstate = (FSMstate + 1) % 6;
                     break;
                 case 3:
-                    moveOneFloor();
+                    if (state.getMovementState() != ElevatorState.STOPPED)
+                        moveOneFloor();
+                    else
+                        FSMstate = (FSMstate + 1) % 6;
                     break;
                 case 4:
                     peopleExit();
+                    if (cyclePos >= internalRequests.size()) {
+                        FSMstate = (FSMstate + 1) % 6;
+                        cyclePos = 0;
+                    }
                     break;
                 case 5:
                     if (internalRequests.isEmpty()) {
@@ -90,14 +103,11 @@ public class Elevator extends Agent {
                         state.setNumPeople(0);
                         updateInterface();
                     }
+                    FSMstate = (FSMstate + 1) % 6;
                     break;
                 default:
                     System.err.println("Bug found");
                     break;
-            }
-            if ((FSMstate != 1 && FSMstate != 3 && FSMstate != 4) || cyclePos >= internalRequests.size()) {
-                FSMstate = (FSMstate + 1) % 6;
-                cyclePos = 0;
             }
         }
 
@@ -183,26 +193,24 @@ public class Elevator extends Agent {
         }
 
         private void moveOneFloor() {
-            if (state.getMovementState() != ElevatorState.STOPPED) {
-                switch (cycleState) {
-                    case 0:
-                        begin = System.currentTimeMillis();
-                        endBlock = System.currentTimeMillis() + properties.getMovementTime();
-                        CommonFunctions.block(properties.getMovementTime(), this);
-                        break;
-                    case 1:
-                        updateFloorBasedOnMovementState();
-                        statistics.setUptime(statistics.getUptime() + System.currentTimeMillis() - begin);
-                        statistics.setDowntime(System.currentTimeMillis() - startupTime - statistics.getUptime());
-                        statistics.setUseRate(statistics.getUptime() * 100.0 / (statistics.getUptime() + statistics.getDowntime()));
-                        cyclePos = internalRequests.size();   // to remove
-                        updateInterface();
-                        break;
-                    default:
-                        System.err.println("Shouldn't be here");
-                }
-                cycleState = (cycleState + 1) % 2;
+            switch (cycleState) {
+                case 0:
+                    begin = System.currentTimeMillis();
+                    endBlock = System.currentTimeMillis() + properties.getMovementTime();
+                    CommonFunctions.block(properties.getMovementTime(), this);
+                    break;
+                case 1:
+                    updateFloorBasedOnMovementState();
+                    statistics.setUptime(statistics.getUptime() + System.currentTimeMillis() - begin);
+                    statistics.setDowntime(System.currentTimeMillis() - startupTime - statistics.getUptime());
+                    statistics.setUseRate(statistics.getUptime() * 100.0 / (statistics.getUptime() + statistics.getDowntime()));
+                    cyclePos = internalRequests.size();   // to remove
+                    updateInterface();
+                    break;
+                default:
+                    System.err.println("Shouldn't be here");
             }
+            cycleState = (cycleState + 1) % 2;
         }
 
         private void updateFloorBasedOnMovementState() {
