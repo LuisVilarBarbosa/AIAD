@@ -7,11 +7,9 @@ import jade.domain.FIPAException;
 
 public class CommonFunctions {
 
-    public static void sleep(final long millis, Behaviour behaviour) {
-        long endMillis = System.currentTimeMillis() + millis;
-        behaviour.block(millis);    // does not work as expected
-        while (System.currentTimeMillis() <= endMillis)
-            behaviour.block(endMillis - System.currentTimeMillis());
+    public static void block(final long millis, Behaviour behaviour) {
+        if (millis > 0)
+            behaviour.block(millis);
     }
 
     public static void registerOnDFService(final Agent agent, final String agentType) {

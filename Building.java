@@ -72,13 +72,18 @@ public class Building extends Agent {
     }
 
     private class BuildingBehaviour extends CyclicBehaviour {
+        private final int numRequests = randNumRequestsPerInterval ? (random.nextInt() % (3 * numElevators)) : numRequestsPerInterval;
+        private long endBlock = System.currentTimeMillis();
 
         @Override
         public void action() {
-            final int n = randNumRequestsPerInterval ? (random.nextInt() % (3 * numElevators)) : numRequestsPerInterval;
-            final ArrayList<Request> requests = generateNRequests(n);
-            sendRequests(requests);
-            CommonFunctions.sleep(reqGenInterval, this);
+            if (endBlock < System.currentTimeMillis()) {
+                final ArrayList<Request> requests = generateNRequests(numRequests);
+                sendRequests(requests);
+                endBlock = System.currentTimeMillis() + reqGenInterval;
+                CommonFunctions.block(reqGenInterval, this);
+            } else
+                CommonFunctions.block(endBlock - System.currentTimeMillis(), this);
         }
 
         private int generateRandomFloor() {
