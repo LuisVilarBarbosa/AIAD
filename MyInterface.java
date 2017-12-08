@@ -5,6 +5,9 @@ import jade.lang.acl.MessageTemplate;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.Date;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -12,12 +15,13 @@ public class MyInterface extends MyAgent {
     public static final String agentType = "MyInterface";
     public static final String separator = "§";
     private static final String jFrameTitle = "Elevator Management";
-    private static final String[] columnNames = {"", "Floor", "Weight", "Num. requests", "State", "Next floor to stop", "Num. people", "CFPs sent", "Proposes sent", "Refuses sent", "Accepted proposals sent", "Accepted proposals received", "People entrance time", "People exit time", "Min. wait time", "Max. wait time", "Uptime", "Downtime", "Use rate", "Max. weight", "Movement time", "Person entrance time", "Person exit time", "Has keyboard on request"};
+    private static final String[] columnNames = {"", "Floor", "Weight (kg)", "Num. requests", "State", "Next floor to stop", "Num. people", "CFPs sent", "Proposes sent", "Refuses sent", "Accepted proposals sent", "Accepted proposals received", "People entrance time (ms)", "People exit time (ms)", "Min. wait time (ms)", "Max. wait time (ms)", "Uptime (ms)", "Downtime (ms)", "Use rate (%)", "Max. weight (kg)", "Movement time (ms)", "Person entrance time (ms)", "Person exit time (ms)", "Has keyboard on request"};
     private static final int preferredWidth = 1200;
     private static final int preferredHeight = 400;
     private final TreeMap<AID, String[]> elevatorsData;
     private final JTable table;
     private final JScrollPane jScrollPane;
+    private final String filename;
 
     public MyInterface(final int numElevators) {
         this.elevatorsData = new TreeMap<>();
@@ -27,6 +31,7 @@ public class MyInterface extends MyAgent {
         this.jScrollPane = new JScrollPane(table);
         final Container container = new Container();
         final JTextField jTextField = new JTextField(columnNames.length);
+        this.filename = "ElevatorsStatistics.txt";
 
         jFrame.add(jPanel);
         jFrame.setResizable(true);
@@ -55,15 +60,36 @@ public class MyInterface extends MyAgent {
         deregisterOnDFService();
     }
 
+
     private void updateGUI() {
         int i = 0;
-        for (Map.Entry<AID, String[]> entry : elevatorsData.entrySet()) {
-            AID aid = entry.getKey();
+        for (final Map.Entry<AID, String[]> entry : elevatorsData.entrySet()) {
+            final AID aid = entry.getKey();
             table.setValueAt(aid.getLocalName(), i, 0);
-            String[] data = entry.getValue();
+            final String[] data = entry.getValue();
             for (int j = 1; j < columnNames.length; j++)
                 table.setValueAt(data[j - 1], i, j);
             i++;
+        }
+    }
+
+    private void updateFile() {
+        final String newline = "\r\n";
+        final StringBuilder sb = new StringBuilder();
+        for (final Map.Entry<AID, String[]> entry : elevatorsData.entrySet()) {
+            final AID aid = entry.getKey();
+            sb.append(aid.getLocalName()).append(":").append(newline);
+            final String[] data = entry.getValue();
+            for (int j = 1; j < columnNames.length; j++)
+                sb.append("\t").append(columnNames[j]).append(": ").append(data[j - 1]).append(newline);
+        }
+
+        try {
+            final FileOutputStream fileOutputStream = new FileOutputStream(filename);
+            fileOutputStream.write(sb.toString().getBytes());
+            fileOutputStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -77,8 +103,10 @@ public class MyInterface extends MyAgent {
                 updated = true;
                 elevatorsData.put(msg.getSender(), msg.getContent().split(MyInterface.separator));
             }
-            if (updated)
+            if (updated) {
                 updateGUI();
+                updateFile();
+            }
         }
     }
 

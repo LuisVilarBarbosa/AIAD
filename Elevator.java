@@ -17,9 +17,9 @@ public class Elevator extends MyAgent {
     private ArrayList<Request> internalRequests;
     private final ElevatorStatistics statistics;
     private final long startupTime;
-    private final int nResponders = 3;    // to remove
+    private final int numElevators;
 
-    public Elevator(final ElevatorProperties properties) {
+    public Elevator(final ElevatorProperties properties, final int numElevators) {
         super();
         this.properties = properties;
         this.state = new ElevatorState();
@@ -27,6 +27,7 @@ public class Elevator extends MyAgent {
         this.internalRequests = new ArrayList<>();
         this.statistics = new ElevatorStatistics();
         this.startupTime = System.currentTimeMillis();
+        this.numElevators = numElevators;
     }
 
     @Override
@@ -66,12 +67,12 @@ public class Elevator extends MyAgent {
                 case 0:
                     receiveRequests();
                     proposeRequestToOthers();
-                    FSMstate = (FSMstate + 1) % 6;
+                    FSMstate = (FSMstate + 1) % 5;
                     break;
                 case 1:
                     peopleEntrance();
                     if (cyclePos >= internalRequests.size()) {
-                        FSMstate = (FSMstate + 1) % 6;
+                        FSMstate = (FSMstate + 1) % 5;
                         cyclePos = 0;
                     }
                     break;
@@ -81,28 +82,20 @@ public class Elevator extends MyAgent {
                     final int diff = nextFloorToStop - currentFloor;
                     state.setMovementState(diff > 0 ? ElevatorState.GOING_UP : (diff < 0 ? ElevatorState.GOING_DOWN : ElevatorState.STOPPED));
                     updateInterface(nextFloorToStop);
-                    FSMstate = (FSMstate + 1) % 6;
+                    FSMstate = (FSMstate + 1) % 5;
                     break;
                 case 3:
                     if (state.getMovementState() != ElevatorState.STOPPED)
                         moveOneFloor();
                     else
-                        FSMstate = (FSMstate + 1) % 6;
+                        FSMstate = (FSMstate + 1) % 5;
                     break;
                 case 4:
                     peopleExit();
                     if (cyclePos >= internalRequests.size()) {
-                        FSMstate = (FSMstate + 1) % 6;
+                        FSMstate = (FSMstate + 1) % 5;
                         cyclePos = 0;
                     }
-                    break;
-                case 5:
-                    if (internalRequests.isEmpty()) {
-                        state.setCurrentWeight(0);
-                        state.setNumPeople(0);
-                        updateInterface();
-                    }
-                    FSMstate = (FSMstate + 1) % 6;
                     break;
                 default:
                     System.err.println("Bug found");
@@ -112,7 +105,6 @@ public class Elevator extends MyAgent {
 
         private void peopleEntrance() {
             state.setMovementState(ElevatorState.STOPPED);
-            //int newPeople = 0;
             while (cyclePos < internalRequests.size()) {
                 Request request = internalRequests.get(cyclePos);
                 if (request.getInitialFloor() == state.getCurrentFloor()) {
@@ -129,10 +121,11 @@ public class Elevator extends MyAgent {
                             break;
                         case 1:
                             statistics.setPeopleEntranceTime(statistics.getPeopleEntranceTime() + System.currentTimeMillis() - begin);
-                            //newPeople++;
                             state.setNumPeople(state.getNumPeople() + 1);
-                            request.setAttended();
-                            request.setDestinationFloor(random.nextInt(properties.getNumFloors()));
+                            request.setAttended(generateWeight());
+                            if (!properties.hasKeyboardOnRequest())
+                                request.setDestinationFloor(random.nextInt(properties.getNumFloors()));
+                            updateWeight();
                             updateInterface();
                             cyclePos++;
                             break;
@@ -172,23 +165,24 @@ public class Elevator extends MyAgent {
                 return closestRequestFloor;
         }
 
-        private void updateWeight(final int numPeople) {
-            int nextCurrentWeight;
+        private void updateWeight() {
+            int currentWeight = 0;
+            for (final Request request : internalRequests)
+                if (request.isAttended())
+                    currentWeight += request.getWeight();
+            state.setCurrentWeight(currentWeight);
+        }
+
+        // May block here if elevator full
+        private int generateWeight(){
+            int nextCurrentWeight, newWeight;
             do {
-                int newWeight = 0;
-                for (int i = 0; i < numPeople; i++) {
-                    int n = random.nextInt() % 41;
-                    newWeight += (60 + n);
-                }
-                int freq = random.nextInt() % 100;
-                if (freq == 0)
-                    newWeight += 20 + random.nextInt() % 81;
-                int in_out = random.nextInt() % 2;
-                if (in_out == 1)
-                    newWeight = -newWeight;
+                newWeight = 60 + random.nextInt(41);
+                if (random.nextInt(100) == 0)
+                    newWeight += 20 + random.nextInt(81);
                 nextCurrentWeight = state.getCurrentWeight() + newWeight;
             } while (nextCurrentWeight < 0 || nextCurrentWeight > properties.getMaxWeight());
-            state.setCurrentWeight(nextCurrentWeight);
+            return newWeight;
         }
 
         private void moveOneFloor() {
@@ -243,6 +237,7 @@ public class Elevator extends MyAgent {
                             internalRequests.remove(cyclePos);
                             statistics.setPeopleExitTime(statistics.getPeopleExitTime() + System.currentTimeMillis() - begin);
                             state.setNumPeople(state.getNumPeople() - 1);
+                            updateWeight();
                             updateInterface();
                             break;
                         default:
@@ -273,7 +268,7 @@ public class Elevator extends MyAgent {
                 aclMessage.setProtocol(FIPANames.InteractionProtocol.FIPA_CONTRACT_NET);
                 aclMessage.setReplyByDate(new Date(System.currentTimeMillis() + 2 * Timer.ONE_SECOND));
                 aclMessage.setSender(myAgent.getAID());
-                for (int i = 0; i < nResponders; i++)
+                for (int i = 0; i < numElevators; i++)
                     if (!myAgent.getAID().getLocalName().equals(Elevator.agentType + i))
                         aclMessage.addReceiver(myAgent.getAID(Elevator.agentType + i));
 
@@ -324,9 +319,10 @@ public class Elevator extends MyAgent {
             }
 
             protected void handleAllResponses(Vector responses, Vector acceptances) {
-                if (responses.size() < nResponders) {
+                final int numResponses = numElevators - 1;
+                if (responses.size() < numResponses) {
                     // Some responder didn't reply within the specified timeout
-                    Console.display("Timeout expired: missing " + (nResponders - responses.size()) + " responses");
+                    Console.display("Timeout expired: missing " + (numResponses - responses.size()) + " responses from " + numResponses + " expected");
                 }
 
                 // Evaluate proposals.
@@ -352,7 +348,7 @@ public class Elevator extends MyAgent {
                 }
                 // Accept the proposal of the best proposer
                 if (accept != null) {
-                    for(int i = 0; i < internalRequests.size();) {
+                    for (int i = 0; i < internalRequests.size(); ) {
                         Request request = internalRequests.get(i);
                         if (request.getInitialFloor() == acceptedRequest.getInitialFloor() && request.getDestinationFloor() == acceptedRequest.getDestinationFloor() && !request.isAttended()) {
                             Console.display("Accepting proposal " + bestProposal + " from responder " + bestProposer.getLocalName());
@@ -360,8 +356,7 @@ public class Elevator extends MyAgent {
                             internalRequests.remove(request);
                             statistics.setAcceptedProposalsSent(statistics.getAcceptedProposalsSent() + 1);
                             break;
-                        }
-                        else
+                        } else
                             i++;
                     }
                 }
@@ -374,9 +369,7 @@ public class Elevator extends MyAgent {
         addBehaviour(new ContractNetResponder(this, template) {
 
             protected ACLMessage handleCfp(ACLMessage cfp) {
-                //Console.display(cfp.toString());
-                Date timeout = cfp.getReplyByDate();
-                if (cfp.getContent() == null || (/*cfp.getPerformative() != ACLMessage.CFP && */timeout != null && timeout.before(new Date())))
+                if (cfp.getPerformative() != ACLMessage.CFP || cfp.getReplyByDate().before(new Date()))
                     return null;
 
                 Console.display(cfp.getSender().getLocalName() + " sent action " + cfp.getContent());

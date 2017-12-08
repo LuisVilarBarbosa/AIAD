@@ -3,6 +3,7 @@ public class Request implements Comparable {
     private int destinationFloor;
     private boolean attended;
     private final long creationTime;
+    private int weight;
 
     public Request(final int initialFloor) {
         this(initialFloor, initialFloor /*assumption*/);
@@ -13,14 +14,16 @@ public class Request implements Comparable {
         this.destinationFloor = destinationFloor;
         this.attended = false;
         this.creationTime = System.currentTimeMillis();
+        this.weight = 0;
     }
 
     public void setDestinationFloor(int destinationFloor) {
         this.destinationFloor = destinationFloor;
     }
 
-    public void setAttended() {
+    public void setAttended(final int weight) {
         this.attended = true;
+        this.weight = weight;
     }
 
     public int getInitialFloor() {
@@ -37,6 +40,10 @@ public class Request implements Comparable {
 
     public long getCreationTime() {
         return creationTime;
+    }
+
+    public int getWeight() {
+        return weight;
     }
 
     @Override
@@ -56,11 +63,11 @@ public class Request implements Comparable {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-
         Request request = (Request) o;
-
-        if (initialFloor != request.initialFloor) return false;
-        if (destinationFloor != request.destinationFloor) return false;
-        return attended == request.attended;
+        return initialFloor == request.initialFloor &&
+                destinationFloor == request.destinationFloor &&
+                attended == request.attended &&
+                creationTime == request.creationTime &&
+                weight == request.weight;
     }
 }

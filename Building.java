@@ -61,7 +61,7 @@ public class Building extends MyAgent {
         final AgentContainer containerController = this.getContainerController();
         for (int i = 0; i < numElevators; i++)
             try {
-                final Elevator elevator = new Elevator(elevatorsProperties.get(i));
+                final Elevator elevator = new Elevator(elevatorsProperties.get(i), numElevators);
                 final AgentController ac = containerController.acceptNewAgent(Elevator.agentType + i, elevator);
                 ac.start();
                 elevators.add(elevator.getAID());
