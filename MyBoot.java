@@ -118,12 +118,12 @@ public class MyBoot extends Boot {
                 e.printStackTrace();
             }
         } catch (ProfileException pe) {
-            System.err.println("Error creating the Profile [" + pe.getMessage() + "]");
+            Console.displayError("Error creating the Profile [" + pe.getMessage() + "]");
             pe.printStackTrace();
             printUsage();
             System.exit(-1);
         } catch (IllegalArgumentException iae) {
-            System.err.println("Command line arguments format error. " + iae.getMessage());
+            Console.displayError("Command line arguments format error. " + iae.getMessage());
             iae.printStackTrace();
             printUsage();
             System.exit(-1);
@@ -147,7 +147,7 @@ public class MyBoot extends Boot {
                 "  " + PERSON_EXIT_TIME + "=" + DEFAULT_PERSON_EXIT_TIME + "\n" +
                 "  " + KEYBOARD_ON_REQUEST + "=" + DEFAULT_KEYBOARD_ON_REQUEST + "\n\n" +
                 "Additional options (MyBoot extends Boot):\n";
-        System.out.print(usage);
+        Console.display(usage);
         Boot.printUsage();
     }
 }

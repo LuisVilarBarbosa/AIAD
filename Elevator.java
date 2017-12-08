@@ -8,7 +8,6 @@ import jade.proto.ContractNetResponder;
 
 import javax.management.timer.Timer;
 import java.util.*;
-import java.util.concurrent.ConcurrentSkipListMap;
 
 public class Elevator extends MyAgent {
     public static final String agentType = "Elevator";
@@ -16,7 +15,6 @@ public class Elevator extends MyAgent {
     private final ElevatorState state;
     private final Random random;
     private ArrayList<Request> internalRequests;
-    private final ConcurrentSkipListMap<Long, String> information;
     private final ElevatorStatistics statistics;
     private final long startupTime;
     private final int nResponders = 3;    // to remove
@@ -27,7 +25,6 @@ public class Elevator extends MyAgent {
         this.state = new ElevatorState();
         this.random = new Random();
         this.internalRequests = new ArrayList<>();
-        this.information = new ConcurrentSkipListMap<>();
         this.statistics = new ElevatorStatistics();
         this.startupTime = System.currentTimeMillis();
     }
@@ -249,7 +246,7 @@ public class Elevator extends MyAgent {
                             updateInterface();
                             break;
                         default:
-                            System.out.println("Shouldn't be here");
+                            Console.display("Shouldn't be here");
                     }
                     cycleState = (cycleState + 1) % 2;
                     break;
@@ -261,12 +258,12 @@ public class Elevator extends MyAgent {
         private void receiveRequests() {
             ACLMessage msg;
             while ((msg = receive(MessageTemplate.MatchProtocol(Building.agentType))) != null) {
-                addToInformation(Building.agentType + " sent " + msg.getContent());
+                Console.display(Building.agentType + " sent " + msg.getContent());
                 if (msg.getSender().getLocalName().startsWith(Building.agentType)) {
                     Request request = new Request(Integer.parseInt(msg.getContent()));
                     internalRequests.add(request);
                 } else
-                    addToInformation("Invalid agent");
+                    Console.display("Invalid agent");
             }
         }
 
@@ -299,7 +296,7 @@ public class Elevator extends MyAgent {
                     final long timeToInitialFloor = largestWaitTime - (currentTime - requestToSend.getCreationTime());
                     final ElevatorMessage elevatorMessage = new ElevatorMessage(requestToSend.getInitialFloor(), requestToSend.getDestinationFloor(), timeToInitialFloor);
                     aclMessage.setContent(elevatorMessage.toString());
-                    addToInformation(myAgent.getAID().getLocalName() + " informing " + elevatorMessage.toString());
+                    Console.display(myAgent.getAID().getLocalName() + " informing " + elevatorMessage.toString());
                     setupContractNetInitiatorBehaviour(aclMessage);
                     statistics.setCFPsSent(statistics.getCFPsSent() + 1);
                 }
@@ -311,26 +308,26 @@ public class Elevator extends MyAgent {
         addBehaviour(new ContractNetInitiator(this, message) {
 
             protected void handlePropose(ACLMessage propose, Vector v) {
-                addToInformation("Agent " + propose.getSender().getLocalName() + " proposed " + propose.getContent());
+                Console.display("Agent " + propose.getSender().getLocalName() + " proposed " + propose.getContent());
             }
 
             protected void handleRefuse(ACLMessage refuse) {
-                addToInformation("Agent " + refuse.getSender().getLocalName() + " refused");
+                Console.display("Agent " + refuse.getSender().getLocalName() + " refused");
             }
 
             protected void handleFailure(ACLMessage failure) {
                 if (failure.getSender().equals(myAgent.getAMS())) {
                     // FAILURE notification from the JADE runtime: the receiver
                     // does not exist
-                    addToInformation("Responder does not exist");
+                    Console.display("Responder does not exist");
                 } else
-                    addToInformation("Agent " + failure.getSender().getLocalName() + " failed");
+                    Console.display("Agent " + failure.getSender().getLocalName() + " failed");
             }
 
             protected void handleAllResponses(Vector responses, Vector acceptances) {
                 if (responses.size() < nResponders) {
                     // Some responder didn't reply within the specified timeout
-                    addToInformation("Timeout expired: missing " + (nResponders - responses.size()) + " responses");
+                    Console.display("Timeout expired: missing " + (nResponders - responses.size()) + " responses");
                 }
                 // Evaluate proposals.
                 long bestProposal = Long.MAX_VALUE;
@@ -355,7 +352,7 @@ public class Elevator extends MyAgent {
                 }
                 // Accept the proposal of the best proposer
                 if (accept != null) {
-                    addToInformation("Accepting proposal " + bestProposal + " from responder " + bestProposer.getLocalName());
+                    Console.display("Accepting proposal " + bestProposal + " from responder " + bestProposer.getLocalName());
                     accept.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
                     internalRequests.remove(new Request(acceptedRequest.getInitialFloor()));
                     statistics.setAcceptedProposalsSent(statistics.getAcceptedProposalsSent() + 1);
@@ -369,24 +366,24 @@ public class Elevator extends MyAgent {
         addBehaviour(new ContractNetResponder(this, template) {
 
             protected ACLMessage handleCfp(ACLMessage cfp) {
-                //System.out.println(new Date().toString() + " " + cfp.toString());
+                //Console.display(cfp.toString());
                 Date timeout = cfp.getReplyByDate();
                 if (cfp.getContent() == null || (/*cfp.getPerformative() != ACLMessage.CFP && */timeout != null && timeout.before(new Date())))
                     return null;
 
-                addToInformation(cfp.getSender().getLocalName() + " sent action " + cfp.getContent());
+                Console.display(cfp.getSender().getLocalName() + " sent action " + cfp.getContent());
                 ElevatorMessage proposedRequest = new ElevatorMessage(cfp.getContent());
                 ACLMessage propose = cfp.createReply();
                 propose.setProtocol(FIPANames.InteractionProtocol.FIPA_CONTRACT_NET);
                 long myTimeToInitialFloor = expectedTimeToFloor(proposedRequest.getInitialFloor());
                 if (myTimeToInitialFloor <= proposedRequest.getTimeToInitialFloor()) {
-                    addToInformation(cfp.getSender().getLocalName() + " sent request proposed with " + myTimeToInitialFloor);
+                    Console.display(cfp.getSender().getLocalName() + " sent request proposed with " + myTimeToInitialFloor);
                     propose.setPerformative(ACLMessage.PROPOSE);
                     ElevatorMessage myPropose = new ElevatorMessage(proposedRequest.getInitialFloor(), proposedRequest.getDestinationFloor(), myTimeToInitialFloor);
                     propose.setContent(myPropose.toString());
                     statistics.setProposesSent(statistics.getProposesSent() + 1);
                 } else {
-                    addToInformation(cfp.getSender().getLocalName() + " sent request refused");
+                    Console.display(cfp.getSender().getLocalName() + " sent request refused");
                     propose.setPerformative(ACLMessage.REFUSE);
                     statistics.setRefusesSent(statistics.getRefusesSent() + 1);
                 }
@@ -395,7 +392,7 @@ public class Elevator extends MyAgent {
 
             protected ACLMessage handleAcceptProposal(ACLMessage cfp, ACLMessage propose, ACLMessage accept) {
                 // Verify performative
-                addToInformation(cfp.getSender().getLocalName() + " sent request added");
+                Console.display(cfp.getSender().getLocalName() + " sent request added");
                 ElevatorMessage elevatorMessage = new ElevatorMessage(cfp.getContent());
                 internalRequests.add(new Request(elevatorMessage.getInitialFloor(), elevatorMessage.getDestinationFloor()));
                 statistics.setAcceptedProposalsReceived(statistics.getAcceptedProposalsReceived() + 1);
@@ -409,24 +406,12 @@ public class Elevator extends MyAgent {
     }
 
     private void updateInterface(int nextFloorToStop) {
-        cleanOldInformation();
         final ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
         msg.setSender(this.getAID());
         msg.addReceiver(this.getAID(MyInterface.agentType));
         msg.setProtocol(MyInterface.agentType);
         msg.setContent(stateString(nextFloorToStop));
         send(msg);
-    }
-
-    private void addToInformation(final String str) {
-        information.put(System.currentTimeMillis(), str);
-        //System.out.println(str);    // to remove
-    }
-
-    private void cleanOldInformation() {
-        for (final Long keyMillis : information.keySet())
-            if (keyMillis < System.currentTimeMillis() - 10 * properties.getMovementTime())
-                information.remove(keyMillis);
     }
 
     private String stateString(final int nextFloorToStop) {
@@ -454,8 +439,6 @@ public class Elevator extends MyAgent {
         sb.append(MyInterface.separator).append(properties.getPersonEntranceTime());
         sb.append(MyInterface.separator).append(properties.getPersonExitTime());
         sb.append(MyInterface.separator).append(ElevatorProperties.getHasKeyboardOnRequestString(properties.hasKeyboardOnRequest()));
-        for (final String info : information.values())
-            sb.append(MyInterface.separator).append(info);
         return sb.toString();
     }
 
