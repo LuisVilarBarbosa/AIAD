@@ -258,8 +258,8 @@ public class Elevator extends MyAgent {
             while ((msg = receive(MessageTemplate.MatchProtocol(Building.agentType))) != null) {
                 display(Building.agentType + " sent " + msg.getContent());
                 if (msg.getSender().getLocalName().startsWith(Building.agentType)) {
-                    final ElevatorMessage elevatorMessage = new ElevatorMessage(msg.getContent());
-                    final Request request = new Request(elevatorMessage.getInitialFloor(), elevatorMessage.getDestinationFloor());
+                    final MessageContent messageContent = new MessageContent(msg.getContent());
+                    final Request request = new Request(messageContent.getInitialFloor(), messageContent.getDestinationFloor());
                     internalRequests.add(request);
                 } else
                     display("Invalid agent");
@@ -292,9 +292,9 @@ public class Elevator extends MyAgent {
 
                 if (requestToSend != null) {
                     final long timeToInitialFloor = largestWaitTime - (currentTime - requestToSend.getCreationTime());
-                    final ElevatorMessage elevatorMessage = new ElevatorMessage(requestToSend.getInitialFloor(), requestToSend.getDestinationFloor(), timeToInitialFloor);
-                    aclMessage.setContent(elevatorMessage.toString());
-                    display(myAgent.getAID().getLocalName() + " informing " + elevatorMessage.toString());
+                    final MessageContent messageContent = new MessageContent(requestToSend.getInitialFloor(), requestToSend.getDestinationFloor(), timeToInitialFloor);
+                    aclMessage.setContent(messageContent.toString());
+                    display(myAgent.getAID().getLocalName() + " informing " + messageContent.toString());
                     setupContractNetInitiatorBehaviour(aclMessage);
                     statistics.setCFPsSent(statistics.getCFPsSent() + 1);
                 }
@@ -338,7 +338,7 @@ public class Elevator extends MyAgent {
                 long bestProposal = Long.MAX_VALUE;
                 AID bestProposer = null;
                 ACLMessage accept = null;
-                ElevatorMessage acceptedRequest = null;
+                MessageContent acceptedRequest = null;
                 Enumeration e = responses.elements();
                 while (e.hasMoreElements()) {
                     ACLMessage msg = (ACLMessage) e.nextElement();
@@ -346,7 +346,7 @@ public class Elevator extends MyAgent {
                         ACLMessage reply = msg.createReply();
                         reply.setPerformative(ACLMessage.REJECT_PROPOSAL);
                         acceptances.addElement(reply);
-                        ElevatorMessage proposal = new ElevatorMessage(msg.getContent());
+                        MessageContent proposal = new MessageContent(msg.getContent());
                         if (proposal.getTimeToInitialFloor() <= bestProposal) {
                             bestProposal = proposal.getTimeToInitialFloor();
                             bestProposer = msg.getSender();
@@ -383,14 +383,14 @@ public class Elevator extends MyAgent {
                     return null;
 
                 display(cfp.getSender().getLocalName() + " sent action " + cfp.getContent());
-                ElevatorMessage proposedRequest = new ElevatorMessage(cfp.getContent());
+                MessageContent proposedRequest = new MessageContent(cfp.getContent());
                 ACLMessage propose = cfp.createReply();
                 propose.setProtocol(FIPANames.InteractionProtocol.FIPA_CONTRACT_NET);
                 long myTimeToInitialFloor = expectedTimeToFloor(proposedRequest.getInitialFloor());
                 if (myTimeToInitialFloor <= proposedRequest.getTimeToInitialFloor()) {
                     display(cfp.getSender().getLocalName() + " sent request proposed with " + myTimeToInitialFloor);
                     propose.setPerformative(ACLMessage.PROPOSE);
-                    ElevatorMessage myPropose = new ElevatorMessage(proposedRequest.getInitialFloor(), proposedRequest.getDestinationFloor(), myTimeToInitialFloor);
+                    MessageContent myPropose = new MessageContent(proposedRequest.getInitialFloor(), proposedRequest.getDestinationFloor(), myTimeToInitialFloor);
                     propose.setContent(myPropose.toString());
                     statistics.setProposesSent(statistics.getProposesSent() + 1);
                 } else {
@@ -404,8 +404,8 @@ public class Elevator extends MyAgent {
             protected ACLMessage handleAcceptProposal(ACLMessage cfp, ACLMessage propose, ACLMessage accept) throws FailureException {
                 super.handleAcceptProposal(cfp, propose, accept);
                 display(cfp.getSender().getLocalName() + " sent request added");
-                ElevatorMessage elevatorMessage = new ElevatorMessage(cfp.getContent());
-                internalRequests.add(new Request(elevatorMessage.getInitialFloor(), elevatorMessage.getDestinationFloor()));
+                MessageContent messageContent = new MessageContent(cfp.getContent());
+                internalRequests.add(new Request(messageContent.getInitialFloor(), messageContent.getDestinationFloor()));
                 statistics.setAcceptedProposalsReceived(statistics.getAcceptedProposalsReceived() + 1); // Includes all acceptances, not only from elevators.
                 return null;
             }

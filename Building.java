@@ -95,13 +95,13 @@ public class Building extends MyAgent {
                 if (elevatorsProperties.get(elevatorPos).hasKeyboardOnRequest())
                     request.setDestinationFloor(MyRandom.randomFloorDifferentThan(request.getInitialFloor(), numFloors));    // shouldn't be here
 
-                final ElevatorMessage elevatorMessage = new ElevatorMessage(request.getInitialFloor(), request.getDestinationFloor(), Long.MAX_VALUE);
+                final MessageContent messageContent = new MessageContent(request.getInitialFloor(), request.getDestinationFloor(), Long.MAX_VALUE);
 
                 final ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
                 msg.setSender(myAgent.getAID());
                 msg.addReceiver(elevators.get(elevatorPos));
                 msg.setProtocol(agentType);
-                msg.setContent(elevatorMessage.toString());
+                msg.setContent(messageContent.toString());
                 send(msg);
             }
         }
