@@ -269,7 +269,6 @@ public class Elevator extends MyAgent {
 
         private void proposeRequestToOthers() {
             if (!internalRequests.isEmpty()) {
-                // TODO While setting the negotiation we need to implement a way to temporarily lock the request, so this is not attended.
                 final ACLMessage aclMessage = new ACLMessage(ACLMessage.CFP);
                 aclMessage.setProtocol(FIPANames.InteractionProtocol.FIPA_CONTRACT_NET);
                 aclMessage.setReplyByDate(new Date(System.currentTimeMillis() + 2 * Timer.ONE_SECOND));
@@ -329,6 +328,7 @@ public class Elevator extends MyAgent {
                     // Some responder didn't reply within the specified timeout
                     Console.display("Timeout expired: missing " + (nResponders - responses.size()) + " responses");
                 }
+
                 // Evaluate proposals.
                 long bestProposal = Long.MAX_VALUE;
                 AID bestProposer = null;
@@ -352,10 +352,18 @@ public class Elevator extends MyAgent {
                 }
                 // Accept the proposal of the best proposer
                 if (accept != null) {
-                    Console.display("Accepting proposal " + bestProposal + " from responder " + bestProposer.getLocalName());
-                    accept.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
-                    internalRequests.remove(new Request(acceptedRequest.getInitialFloor()));
-                    statistics.setAcceptedProposalsSent(statistics.getAcceptedProposalsSent() + 1);
+                    for(int i = 0; i < internalRequests.size();) {
+                        Request request = internalRequests.get(i);
+                        if (request.getInitialFloor() == acceptedRequest.getInitialFloor() && request.getDestinationFloor() == acceptedRequest.getDestinationFloor() && !request.isAttended()) {
+                            Console.display("Accepting proposal " + bestProposal + " from responder " + bestProposer.getLocalName());
+                            accept.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
+                            internalRequests.remove(request);
+                            statistics.setAcceptedProposalsSent(statistics.getAcceptedProposalsSent() + 1);
+                            break;
+                        }
+                        else
+                            i++;
+                    }
                 }
             }
         });
