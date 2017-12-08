@@ -20,9 +20,9 @@ public class MyInterface extends MyAgent {
     private final TreeMap<AID, String[]> elevatorsData;
     private final JTable table;
     private final JScrollPane jScrollPane;
-    private final String filename;
+    private final String statisticsFilename;
 
-    public MyInterface(final int numElevators) {
+    public MyInterface(final int numElevators, final String statisticsFilename) {
         this.elevatorsData = new TreeMap<>();
         final JFrame jFrame = new JFrame(jFrameTitle);
         final JPanel jPanel = new JPanel();
@@ -30,7 +30,7 @@ public class MyInterface extends MyAgent {
         this.jScrollPane = new JScrollPane(table);
         final Container container = new Container();
         final JTextField jTextField = new JTextField(columnNames.length);
-        this.filename = "ElevatorsStatistics.txt";
+        this.statisticsFilename = statisticsFilename;
 
         jFrame.add(jPanel);
         jFrame.setResizable(true);
@@ -84,7 +84,7 @@ public class MyInterface extends MyAgent {
         }
 
         try {
-            final FileOutputStream fileOutputStream = new FileOutputStream(filename);
+            final FileOutputStream fileOutputStream = new FileOutputStream(statisticsFilename);
             fileOutputStream.write(sb.toString().getBytes());
             fileOutputStream.close();
         } catch (IOException e) {

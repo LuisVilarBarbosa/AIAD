@@ -24,6 +24,7 @@ public class MyBoot extends Boot {
     private static final String PERSON_ENTRANCE_TIME = "personEntranceTime";
     private static final String PERSON_EXIT_TIME = "personExitTime";
     private static final String KEYBOARD_ON_REQUEST = "keyboardOnRequest";
+    private static final String STATISTICS_FILENAME = "statisticsFilename";
     private static final String DEFAULT_NUM_FLOORS = "3";
     private static final String DEFAULT_NUM_ELEVATORS = "5";
     private static final String DEFAULT_MAX_WEIGHT = "500";
@@ -33,6 +34,7 @@ public class MyBoot extends Boot {
     private static final String DEFAULT_PERSON_ENTRANCE_TIME = "1000";
     private static final String DEFAULT_PERSON_EXIT_TIME = "1000";
     private static final String DEFAULT_KEYBOARD_ON_REQUEST = "false";
+    private static final String DEFAULT_STATISTICS_FILENAME = "ElevatorsStatistics.txt";
 
     /**
      * Fires up the <b><em>JADE</em></b> system.
@@ -84,6 +86,7 @@ public class MyBoot extends Boot {
                 final int numElevators = Integer.parseInt(p.getParameter(NUM_ELEVATORS_PARAMETER, DEFAULT_NUM_ELEVATORS));
                 final long reqGenInterval = Integer.parseInt(p.getParameter(REQUEST_GENERATION_INTERVAL, DEFAULT_REQUEST_GENERATION_INTERVAL));
                 final String numRequestsPerIntervalStr = p.getParameter(NUM_REQUESTS_PER_INTERVAL, DEFAULT_NUM_REQUESTS_PER_INTERVAL);
+                final String statisticsFilename = p.getParameter(STATISTICS_FILENAME, DEFAULT_STATISTICS_FILENAME);
                 final ArrayList<ElevatorProperties> elevatorsProperties = new ArrayList<>();
                 for (int i = 0; i < numElevators; i++) {
                     final int maxWeight = Integer.parseInt(p.getParameter(MAX_WEIGHT_PARAMETER + i, DEFAULT_MAX_WEIGHT));
@@ -112,7 +115,7 @@ public class MyBoot extends Boot {
 
                 final AgentController buildingAC = containerController.acceptNewAgent(Building.agentType, building);
                 buildingAC.start();
-                final AgentController myInterfaceAC = containerController.acceptNewAgent(MyInterface.agentType, new MyInterface(numElevators));
+                final AgentController myInterfaceAC = containerController.acceptNewAgent(MyInterface.agentType, new MyInterface(numElevators, statisticsFilename));
                 myInterfaceAC.start();
             } catch (StaleProxyException e) {
                 e.printStackTrace();
@@ -132,8 +135,8 @@ public class MyBoot extends Boot {
 
     public static void printUsage() {
         String usage = "\nUsage:\n" +
-                "Command-type 1: java -classpath jade.jar;. MyBoot [<filename>]\n" +
-                "Command-type 2: java -classpath jade.jar;. MyBoot [-gui] -" + NUM_FLOORS_PARAMETER + " 5 -" + NUM_ELEVATORS_PARAMETER + " 3 -" + MAX_WEIGHT_PARAMETER + "0 100 -" + MAX_WEIGHT_PARAMETER + "1 200 -" + MAX_WEIGHT_PARAMETER + "2 300 -" + MOVEMENT_TIME_PARAMETER + "0 1000 -" + MOVEMENT_TIME_PARAMETER + "1 500 -" + MOVEMENT_TIME_PARAMETER + "2 2000 -" + PERSON_ENTRANCE_TIME + "0 1000 -" + PERSON_ENTRANCE_TIME + "1 1000 -" + PERSON_ENTRANCE_TIME + "2 1000 -" + PERSON_EXIT_TIME + "0 1000 -" + PERSON_EXIT_TIME + "1 1000 -" + PERSON_EXIT_TIME + "2 1000 -" + KEYBOARD_ON_REQUEST + "0 false -" + KEYBOARD_ON_REQUEST + "1 false -" + KEYBOARD_ON_REQUEST + "2 true\n\n" +
+                "Command-type 1: java -classpath \"jade.jar;.\" MyBoot [<filename>]\n" +
+                "Command-type 2: java -classpath \"jade.jar;.\" MyBoot [-gui] -" + NUM_FLOORS_PARAMETER + " 5 -" + NUM_ELEVATORS_PARAMETER + " 3 -" + MAX_WEIGHT_PARAMETER + "0 100 -" + MAX_WEIGHT_PARAMETER + "1 200 -" + MAX_WEIGHT_PARAMETER + "2 300 -" + MOVEMENT_TIME_PARAMETER + "0 1000 -" + MOVEMENT_TIME_PARAMETER + "1 500 -" + MOVEMENT_TIME_PARAMETER + "2 2000 -" + PERSON_ENTRANCE_TIME + "0 1000 -" + PERSON_ENTRANCE_TIME + "1 1000 -" + PERSON_ENTRANCE_TIME + "2 1000 -" + PERSON_EXIT_TIME + "0 1000 -" + PERSON_EXIT_TIME + "1 1000 -" + PERSON_EXIT_TIME + "2 1000 -" + KEYBOARD_ON_REQUEST + "0 false -" + KEYBOARD_ON_REQUEST + "1 false -" + KEYBOARD_ON_REQUEST + "2 true -" + STATISTICS_FILENAME + " " + DEFAULT_STATISTICS_FILENAME + "\n\n" +
                 "For command-type 1, if no filename is indicated, it will use the default file with name '" + DEFAULT_FILENAME + "'.\n" +
                 "For command-type 2, there should be as many '" + MAX_WEIGHT_PARAMETER + "X', '" + MOVEMENT_TIME_PARAMETER + "X', '" + PERSON_ENTRANCE_TIME + "X', '" + PERSON_EXIT_TIME + "X' and '" + KEYBOARD_ON_REQUEST + "X' as elevators.\n" +
                 "For both commands types, if some of the values are not indicated, the corresponding default will be associated to the missing value:\n" +
@@ -145,7 +148,8 @@ public class MyBoot extends Boot {
                 "  " + NUM_REQUESTS_PER_INTERVAL + "=" + DEFAULT_NUM_REQUESTS_PER_INTERVAL + "\n" +
                 "  " + PERSON_ENTRANCE_TIME + "=" + DEFAULT_PERSON_ENTRANCE_TIME + "\n" +
                 "  " + PERSON_EXIT_TIME + "=" + DEFAULT_PERSON_EXIT_TIME + "\n" +
-                "  " + KEYBOARD_ON_REQUEST + "=" + DEFAULT_KEYBOARD_ON_REQUEST + "\n\n" +
+                "  " + KEYBOARD_ON_REQUEST + "=" + DEFAULT_KEYBOARD_ON_REQUEST + "\n" +
+                "  " + STATISTICS_FILENAME + "=" + DEFAULT_STATISTICS_FILENAME + "\n\n" +
                 "Additional options (MyBoot extends Boot):\n";
         Console.display(usage);
         Boot.printUsage();
