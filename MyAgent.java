@@ -33,4 +33,12 @@ public class MyAgent extends Agent {
             e.printStackTrace();
         }
     }
+
+    protected void display(final String str) {
+        Console.display(this.getAID().getLocalName() + ": " + str);
+    }
+
+    protected void displayError(final Agent agent, final String str) {
+        Console.displayError(this.getAID().getLocalName() + ": " + str);
+    }
 }

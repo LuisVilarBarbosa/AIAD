@@ -6,14 +6,12 @@ import jade.wrapper.AgentController;
 import jade.wrapper.StaleProxyException;
 
 import java.util.ArrayList;
-import java.util.Random;
 
 public class Building extends MyAgent {
     public static final String agentType = "Building";
     private final int numFloors;
     private final int numElevators;
     private final ArrayList<ElevatorProperties> elevatorsProperties;
-    private final Random random;
     private final ArrayList<AID> elevators;
     private final long reqGenInterval;
     private final boolean randNumRequestsPerInterval;
@@ -36,7 +34,6 @@ public class Building extends MyAgent {
         this.numFloors = numFloors;
         this.elevatorsProperties = elevatorsProperties;
         this.numElevators = this.elevatorsProperties.size();
-        this.random = new Random();
         this.elevators = new ArrayList<>();
         this.reqGenInterval = reqGenInterval;
         this.randNumRequestsPerInterval = randNumRequestsPerInterval;
@@ -71,7 +68,7 @@ public class Building extends MyAgent {
     }
 
     private class BuildingBehaviour extends CyclicBehaviour {
-        private final int numRequests = randNumRequestsPerInterval ? (random.nextInt() % (3 * numElevators)) : numRequestsPerInterval;
+        private final int numRequests = randNumRequestsPerInterval ? MyRandom.randomInt(0, 3 * numElevators) : numRequestsPerInterval;
         private long endBlock = System.currentTimeMillis();
 
         @Override
@@ -85,32 +82,26 @@ public class Building extends MyAgent {
                 blockBehaviour(endBlock - System.currentTimeMillis(), this);
         }
 
-        private int generateRandomFloor() {
-            final int rand = random.nextInt(numFloors * 2);
-            return rand >= numFloors ? 0 : rand;
-        }
-
         private ArrayList<Request> generateNRequests(final int n) {
             final ArrayList<Request> requests = new ArrayList<>();
-            for (int i = 0; i < n; i++) {
-                final Request request = new Request(generateRandomFloor());
-                requests.add(request);
-            }
+            for (int i = 0; i < n; i++)
+                requests.add(new Request(MyRandom.randomFloor(numFloors)));
             return requests;
         }
 
         private void sendRequests(final ArrayList<Request> requests) {
-            // shouldn't be here
             for (final Request request : requests) {
-                int elevatorPos = random.nextInt(elevators.size());
+                final int elevatorPos = MyRandom.randomInt(0, elevators.size() - 1);
                 if (elevatorsProperties.get(elevatorPos).hasKeyboardOnRequest())
-                    request.setDestinationFloor(generateRandomFloor());
+                    request.setDestinationFloor(MyRandom.randomFloorDifferentThan(request.getInitialFloor(), numFloors));    // shouldn't be here
+
+                final ElevatorMessage elevatorMessage = new ElevatorMessage(request.getInitialFloor(), request.getDestinationFloor(), Long.MAX_VALUE);
 
                 final ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
                 msg.setSender(myAgent.getAID());
                 msg.addReceiver(elevators.get(elevatorPos));
                 msg.setProtocol(agentType);
-                msg.setContent(Integer.toString(request.getInitialFloor()));
+                msg.setContent(elevatorMessage.toString());
                 send(msg);
             }
         }

@@ -13,7 +13,7 @@ public class ElevatorMessage {
         if (matcher.matches()) {
             this.initialFloor = Integer.parseInt(matcher.group(1));
             this.destinationFloor = Integer.parseInt(matcher.group(2));
-            this.timeToInitialFloor = Integer.parseInt(matcher.group(3));
+            this.timeToInitialFloor = Long.parseLong(matcher.group(3));
         } else
             throw new IllegalArgumentException("Invalid format for message: " + message);
     }

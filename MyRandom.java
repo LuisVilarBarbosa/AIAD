@@ -1,0 +1,22 @@
+import java.util.Random;
+
+public class MyRandom {
+    private static Random random = new Random();
+
+    public static int randomFloor(final int numFloors) {
+        final int rand = randomInt(0, numFloors * 2);
+        return rand >= numFloors ? 0 : rand;
+    }
+
+    public static int randomFloorDifferentThan(final int value, final int numFloors) {
+        int rand;
+        do {
+            rand = randomFloor(numFloors);
+        } while (rand == value);
+        return rand;
+    }
+
+    public static int randomInt(final int min, final int max) {
+        return min + random.nextInt(max - min + 1);
+    }
+}
