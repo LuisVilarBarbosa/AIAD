@@ -55,6 +55,7 @@ public class Elevator extends MyAgent {
         private int cyclePos = 0;
         private long blockStart = System.currentTimeMillis();
         private long blockEnd = blockStart;
+        private int newWeight = 0;
 
         @Override
         public void action() {
@@ -107,23 +108,28 @@ public class Elevator extends MyAgent {
             state.setMovementState(ElevatorState.STOPPED);
             while (cyclePos < internalRequests.size()) {
                 final Request request = internalRequests.get(cyclePos);
-                if (request.getInitialFloor() == state.getCurrentFloor()) {
+                if (request.getInitialFloor() == state.getCurrentFloor() && !request.isAttended()) {
                     switch (fsm2State) {
                         case 0:
-                            blockStart = System.currentTimeMillis();
-                            final long waitTime = blockStart - request.getCreationTime();
-                            if (waitTime < statistics.getMinWaitTime())
-                                statistics.setMinWaitTime(waitTime);
-                            if (waitTime > statistics.getMaxWaitTime())
-                                statistics.setMaxWaitTime(waitTime);
-                            final long personEntranceTime = properties.getPersonEntranceTime();
-                            blockEnd = blockStart + personEntranceTime;
-                            blockBehaviour(personEntranceTime, this);
+                            newWeight = generateWeight();
+                            if (newWeight == 0)
+                                cyclePos++; // unable to attend request
+                            else {
+                                blockStart = System.currentTimeMillis();
+                                final long waitTime = blockStart - request.getCreationTime();
+                                if (waitTime < statistics.getMinWaitTime())
+                                    statistics.setMinWaitTime(waitTime);
+                                if (waitTime > statistics.getMaxWaitTime())
+                                    statistics.setMaxWaitTime(waitTime);
+                                final long personEntranceTime = properties.getPersonEntranceTime();
+                                blockEnd = blockStart + personEntranceTime;
+                                blockBehaviour(personEntranceTime, this);
+                            }
                             break;
                         case 1:
                             statistics.setPeopleEntranceTime(statistics.getPeopleEntranceTime() + System.currentTimeMillis() - blockStart);
                             state.setNumPeople(state.getNumPeople() + 1);
-                            request.setAttended(generateWeight());
+                            request.setAttended(newWeight);
                             updateWeight();
                             if (!properties.hasKeyboardOnRequest())
                                 request.setDestinationFloor(MyRandom.randomFloorDifferentThan(request.getInitialFloor(), properties.getNumFloors()));
@@ -173,15 +179,18 @@ public class Elevator extends MyAgent {
             state.setCurrentWeight(currentWeight);
         }
 
-        // May block here if elevator full
         private int generateWeight() {
-            int nextCurrentWeight, newWeight;
+            final int maxAttempts = 5;
+            int nextCurrentWeight, newWeight, attempt = 0;
             do {
                 newWeight = MyRandom.randomInt(60, 100);
                 if (MyRandom.randomInt(0, 100) == 0)
                     newWeight += MyRandom.randomInt(20, 100);
                 nextCurrentWeight = state.getCurrentWeight() + newWeight;
-            } while (nextCurrentWeight < 0 || nextCurrentWeight > properties.getMaxWeight());
+                attempt++;
+            } while ((nextCurrentWeight < 0 || nextCurrentWeight > properties.getMaxWeight()) && attempt < maxAttempts);
+            if (attempt >= maxAttempts)
+                newWeight = 0;
             return newWeight;
         }
 

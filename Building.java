@@ -68,7 +68,7 @@ public class Building extends MyAgent {
     }
 
     private class BuildingBehaviour extends CyclicBehaviour {
-        private final int numRequests = randNumRequestsPerInterval ? MyRandom.randomInt(0, 3 * numElevators) : numRequestsPerInterval;
+        private final int numRequests = randNumRequestsPerInterval ? MyRandom.randomInt(1, 3 * numElevators) : numRequestsPerInterval;
         private long endBlock = System.currentTimeMillis();
 
         @Override
