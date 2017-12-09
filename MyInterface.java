@@ -15,7 +15,7 @@ public class MyInterface extends MyAgent {
     public static final String agentType = "MyInterface";
     public static final String separator = "§";
     private static final String jFrameTitle = "Elevator Management";
-    private static final String[] columnNames = {"", "Floor", "Weight (kg)", "Num. requests", "State", "Next floor to stop", "Num. people", "CFPs sent", "Proposes sent", "Refuses sent", "Accepted proposals sent", "Accepted proposals received", "People entrance time (ms)", "People exit time (ms)", "Min. wait time (ms)", "Max. wait time (ms)", "Uptime (ms)", "Downtime (ms)", "Use rate (%)", "Max. weight (kg)", "Movement time (ms)", "Person entrance time (ms)", "Person exit time (ms)", "Has keyboard on request"};
+    private static final String[] columnNames = {"Agent", "Floor", "Weight (kg)", "Num. requests", "State", "Next floor to stop", "Num. people", "CFPs sent", "Proposes sent", "Refuses sent", "Accept proposals sent", "Accept proposals received", "People entrance time (ms)", "People exit time (ms)", "Min. wait time (ms)", "Max. wait time (ms)", "Uptime (ms)", "Downtime (ms)", "Use rate (%)", "Max. weight (kg)", "Movement time (ms)", "Person entrance time (ms)", "Person exit time (ms)", "Has keyboard on request"};
     private static final int preferredWidth = 1200;
     private static final int preferredHeight = 400;
     private final TreeMap<AID, String[]> elevatorsData;

@@ -352,7 +352,7 @@ public class Elevator extends MyAgent {
                             display("Accepting proposal " + bestProposal + " from responder " + bestProposer.getLocalName());
                             accept.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
                             internalRequests.remove(i);
-                            statistics.setAcceptedProposalsSent(statistics.getAcceptedProposalsSent() + 1);
+                            statistics.setAcceptProposalsSent(statistics.getAcceptProposalsSent() + 1);
                             break;
                         } else
                             i++;
@@ -425,8 +425,8 @@ public class Elevator extends MyAgent {
         sb.append(MyInterface.separator).append(statistics.getCFPsSent());
         sb.append(MyInterface.separator).append(statistics.getProposesSent());
         sb.append(MyInterface.separator).append(statistics.getRefusesSent());
-        sb.append(MyInterface.separator).append(statistics.getAcceptedProposalsSent());
-        sb.append(MyInterface.separator).append(statistics.getAcceptedProposalsReceived());
+        sb.append(MyInterface.separator).append(statistics.getAcceptProposalsSent());
+        sb.append(MyInterface.separator).append(statistics.getAcceptProposalsReceived());
         sb.append(MyInterface.separator).append(statistics.getPeopleEntranceTime());
         sb.append(MyInterface.separator).append(statistics.getPeopleExitTime());
         sb.append(MyInterface.separator).append(statistics.getMinWaitTime());
