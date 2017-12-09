@@ -105,12 +105,12 @@ public class Elevator extends MyAgent {
         }
 
         private void peopleEntrance() {
-            state.setMovementState(ElevatorState.STOPPED);
             while (cyclePos < internalRequests.size()) {
                 final Request request = internalRequests.get(cyclePos);
                 if (request.getInitialFloor() == state.getCurrentFloor() && !request.isAttended()) {
                     switch (fsm2State) {
                         case 0:
+                            state.setMovementState(ElevatorState.STOPPED);
                             newWeight = generateWeight();
                             if (newWeight == 0)
                                 cyclePos++; // unable to attend request
@@ -231,12 +231,12 @@ public class Elevator extends MyAgent {
         }
 
         private void peopleExit() {
-            state.setMovementState(ElevatorState.STOPPED);
             while (cyclePos < internalRequests.size()) {
                 final Request request = internalRequests.get(cyclePos);
                 if (request.isAttended() && request.getDestinationFloor() == state.getCurrentFloor()) {
                     switch (fsm2State) {
                         case 0:
+                            state.setMovementState(ElevatorState.STOPPED);
                             final long personExitTime = properties.getPersonExitTime();
                             blockStart = System.currentTimeMillis();
                             blockEnd = blockStart + personExitTime;
@@ -380,12 +380,12 @@ public class Elevator extends MyAgent {
     }
 
     private void setupContractNetResponderBehaviour() {
-        MessageTemplate template = MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_CONTRACT_NET);
+        MessageTemplate template = MessageTemplate.and(MessageTemplate.MatchPerformative(ACLMessage.CFP), MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_CONTRACT_NET));
         addBehaviour(new ContractNetResponder(this, template) {
             protected ACLMessage handleCfp(ACLMessage cfp) throws NotUnderstoodException, FailureException, RefuseException {
                 super.handleCfp(cfp);
 
-                if (cfp.getPerformative() != ACLMessage.CFP || cfp.getReplyByDate().before(new Date()))
+                if (cfp.getReplyByDate().before(new Date()))
                     return null;
 
                 display(cfp.getSender().getLocalName() + " sent action " + cfp.getContent());

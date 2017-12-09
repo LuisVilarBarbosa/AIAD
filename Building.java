@@ -27,8 +27,8 @@ public class Building extends MyAgent {
 
     private Building(final int numFloors, final long reqGenInterval, final boolean randNumRequestsPerInterval, final int numRequestsPerInterval, final ArrayList<ElevatorProperties> elevatorsProperties) {
         super();
-        if (numFloors < 0)
-            throw new IllegalArgumentException("Invalid number of floors:" + numFloors);
+        if (numFloors < 2)
+            throw new IllegalArgumentException("Invalid number of floors: " + numFloors);
         if (reqGenInterval < 0)
             throw new IllegalArgumentException("Invalid request generation interval: " + reqGenInterval);
         this.numFloors = numFloors;
@@ -68,12 +68,12 @@ public class Building extends MyAgent {
     }
 
     private class BuildingBehaviour extends CyclicBehaviour {
-        private final int numRequests = randNumRequestsPerInterval ? MyRandom.randomInt(1, 3 * numElevators) : numRequestsPerInterval;
         private long endBlock = System.currentTimeMillis();
 
         @Override
         public void action() {
             if (endBlock < System.currentTimeMillis()) {
+                final int numRequests = randNumRequestsPerInterval ? MyRandom.randomInt(1, 3 * numElevators) : numRequestsPerInterval;
                 final ArrayList<Request> requests = generateNRequests(numRequests);
                 sendRequests(requests);
                 endBlock = System.currentTimeMillis() + reqGenInterval;

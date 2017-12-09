@@ -9,6 +9,9 @@ public class MyRandom {
     }
 
     public static int randomFloorDifferentThan(final int value, final int numFloors) {
+        if (value == 0 && numFloors <= 1)
+            throw new IllegalArgumentException(value + " is the only option for a floor in the interval [" + value + "," + (numFloors - 1) + "]");
+
         int rand;
         do {
             rand = randomFloor(numFloors);
