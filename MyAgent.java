@@ -38,7 +38,7 @@ public class MyAgent extends Agent {
         Console.display(this.getAID().getLocalName() + ": " + str);
     }
 
-    protected void displayError(final Agent agent, final String str) {
+    protected void displayError(final String str) {
         Console.displayError(this.getAID().getLocalName() + ": " + str);
     }
 }

@@ -64,9 +64,6 @@ public class Elevator extends MyAgent {
                 return;
             }
 
-            /*if(myAgent.getAID().getLocalName().equals("Elevator1"))
-                displayError(fsm1State + " " + cyclePos + " " + fsm2State);*/
-
             switch (fsm1State) {
                 case 0:
                     receiveRequests();
@@ -91,8 +88,7 @@ public class Elevator extends MyAgent {
                 case 3:
                     if (state.getMovementState() != ElevatorState.STOPPED)
                         moveOneFloor();
-                    else
-                        fsm1State = (fsm1State + 1) % 5;
+                    fsm1State = (fsm1State + 1) % 5;
                     break;
                 case 4:
                     peopleExit();
@@ -102,7 +98,7 @@ public class Elevator extends MyAgent {
                     }
                     break;
                 default:
-                    displayError(myAgent, "Bug on action()");
+                    displayError("Bug on action()");
                     break;
             }
         }
@@ -135,7 +131,7 @@ public class Elevator extends MyAgent {
                             cyclePos++;
                             break;
                         default:
-                            displayError(myAgent, "Bug on peopleEntrance()");
+                            displayError("Bug on peopleEntrance()");
                     }
                     fsm2State = (fsm2State + 1) % 2;
                     break;
@@ -205,7 +201,7 @@ public class Elevator extends MyAgent {
                     updateInterface();
                     break;
                 default:
-                    displayError(myAgent, "Bug on moveOneFloor()");
+                    displayError("Bug on moveOneFloor()");
             }
             fsm2State = (fsm2State + 1) % 2;
         }
@@ -245,7 +241,7 @@ public class Elevator extends MyAgent {
                             updateInterface();
                             break;
                         default:
-                            display("Bug on peopleExit()");
+                            displayError("Bug on peopleExit()");
                     }
                     fsm2State = (fsm2State + 1) % 2;
                     break;
@@ -263,7 +259,7 @@ public class Elevator extends MyAgent {
                     final Request request = new Request(messageContent.getInitialFloor(), messageContent.getDestinationFloor());
                     internalRequests.add(request);
                 } else
-                    display("Invalid agent");
+                    displayError("Invalid agent");
             }
         }
 
