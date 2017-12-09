@@ -2,8 +2,8 @@ public class ElevatorStatistics {
     private int CFPsSent;
     private int proposesSent;
     private int refusesSent;
-    private int acceptedProposalsSent;
-    private int acceptedProposalsReceived;
+    private int acceptProposalsSent;
+    private int acceptProposalsReceived;
     private long peopleEntranceTime;
     private long peopleExitTime;
     private long maxWaitTime;
@@ -16,8 +16,8 @@ public class ElevatorStatistics {
         this.CFPsSent = 0;
         this.proposesSent = 0;
         this.refusesSent = 0;
-        this.acceptedProposalsSent = 0;
-        this.acceptedProposalsReceived = 0;
+        this.acceptProposalsSent = 0;
+        this.acceptProposalsReceived = 0;
         this.peopleEntranceTime = 0;
         this.peopleExitTime = 0;
         this.maxWaitTime = 0;
@@ -57,24 +57,24 @@ public class ElevatorStatistics {
         this.refusesSent = refusesSent;
     }
 
-    public int getAcceptedProposalsSent() {
-        return acceptedProposalsSent;
+    public int getAcceptProposalsSent() {
+        return acceptProposalsSent;
     }
 
-    public void setAcceptedProposalsSent(int acceptedProposalsSent) {
+    public void setAcceptProposalsSent(int acceptedProposalsSent) {
         if (acceptedProposalsSent < 0)
             throw new IllegalArgumentException("Invalid number of accepted proposals sent: " + acceptedProposalsSent);
-        this.acceptedProposalsSent = acceptedProposalsSent;
+        this.acceptProposalsSent = acceptedProposalsSent;
     }
 
-    public int getAcceptedProposalsReceived() {
-        return acceptedProposalsReceived;
+    public int getAcceptProposalsReceived() {
+        return acceptProposalsReceived;
     }
 
-    public void setAcceptedProposalsReceived(int acceptedProposalsReceived) {
+    public void setAcceptProposalsReceived(int acceptedProposalsReceived) {
         if (acceptedProposalsReceived < 0)
             throw new IllegalArgumentException("Invalid number of accepted proposals received: " + acceptedProposalsReceived);
-        this.acceptedProposalsReceived = acceptedProposalsReceived;
+        this.acceptProposalsReceived = acceptedProposalsReceived;
     }
 
     public long getPeopleEntranceTime() {

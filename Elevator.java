@@ -61,7 +61,6 @@ public class Elevator extends MyAgent {
 
             switch (fsm1State) {
                 case 0:
-                    receiveRequests();
                     proposeRequestToOthers();
                     fsm1State = (fsm1State + 1) % 5;
                     break;
@@ -151,7 +150,7 @@ public class Elevator extends MyAgent {
                         bestDistance = distance;
                         closestRequestFloor = request.getDestinationFloor();
                     }
-                } else {
+                } else if (generateWeight() != 0) { // If it is possible to attend the request
                     final int distance = Math.abs(number - request.getInitialFloor());
                     if (distance < bestDistance) {
                         bestDistance = distance;
@@ -178,7 +177,7 @@ public class Elevator extends MyAgent {
             final int currentWeight = state.getCurrentWeight();
             final int minNewWeight = 60;
             final int maxWeight = properties.getMaxWeight();
-            if(currentWeight + minNewWeight > maxWeight)
+            if (currentWeight + minNewWeight > maxWeight)
                 return 0;
 
             int nextCurrentWeight, newWeight;
@@ -253,19 +252,6 @@ public class Elevator extends MyAgent {
                     break;
                 } else
                     cyclePos++;
-            }
-        }
-
-        private void receiveRequests() {
-            ACLMessage msg;
-            while ((msg = receive(MessageTemplate.MatchProtocol(Building.agentType))) != null) {
-                display(Building.agentType + " sent " + msg.getContent());
-                if (msg.getSender().getLocalName().startsWith(Building.agentType)) {
-                    final MessageContent messageContent = new MessageContent(msg.getContent());
-                    final Request request = new Request(messageContent.getInitialFloor(), messageContent.getDestinationFloor());
-                    internalRequests.add(request);
-                } else
-                    displayError("Invalid agent");
             }
         }
 
@@ -365,7 +351,7 @@ public class Elevator extends MyAgent {
                         if (request.getInitialFloor() == acceptedRequest.getInitialFloor() && request.getDestinationFloor() == acceptedRequest.getDestinationFloor() && !request.isAttended()) {
                             display("Accepting proposal " + bestProposal + " from responder " + bestProposer.getLocalName());
                             accept.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
-                            internalRequests.remove(request);
+                            internalRequests.remove(i);
                             statistics.setAcceptedProposalsSent(statistics.getAcceptedProposalsSent() + 1);
                             break;
                         } else
@@ -409,7 +395,7 @@ public class Elevator extends MyAgent {
                 display(cfp.getSender().getLocalName() + " sent request added");
                 MessageContent messageContent = new MessageContent(cfp.getContent());
                 internalRequests.add(new Request(messageContent.getInitialFloor(), messageContent.getDestinationFloor()));
-                statistics.setAcceptedProposalsReceived(statistics.getAcceptedProposalsReceived() + 1); // Includes all acceptances, not only from elevators.
+                statistics.setAcceptProposalsReceived(statistics.getAcceptProposalsReceived() + 1);
                 return null;
             }
         });

@@ -1,11 +1,17 @@
 import jade.core.AID;
 import jade.core.behaviours.CyclicBehaviour;
+import jade.domain.FIPANames;
 import jade.lang.acl.ACLMessage;
+import jade.proto.ContractNetInitiator;
 import jade.wrapper.AgentContainer;
 import jade.wrapper.AgentController;
 import jade.wrapper.StaleProxyException;
 
+import javax.management.timer.Timer;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.Vector;
 
 public class Building extends MyAgent {
     public static final String agentType = "Building";
@@ -61,6 +67,40 @@ public class Building extends MyAgent {
             }
     }
 
+    private void setupContractNetInitiatorBehaviour(ACLMessage message) {
+        addBehaviour(new ContractNetInitiator(this, message) {
+
+            protected void handleAllResponses(Vector responses, Vector acceptances) {
+                super.handleAllResponses(responses, acceptances);
+
+                final int numResponses = numElevators;
+                if (responses.size() < numResponses)
+                    display("Timeout expired: missing " + (numResponses - responses.size()) + " responses from " + numResponses + " expected");
+
+                // Evaluate proposals.
+                long bestProposal = Long.MAX_VALUE;
+                ACLMessage accept = null;
+                Enumeration e = responses.elements();
+                while (e.hasMoreElements()) {
+                    ACLMessage msg = (ACLMessage) e.nextElement();
+                    if (msg.getPerformative() == ACLMessage.PROPOSE) {
+                        ACLMessage reply = msg.createReply();
+                        reply.setPerformative(ACLMessage.REJECT_PROPOSAL);
+                        acceptances.addElement(reply);
+                        MessageContent proposal = new MessageContent(msg.getContent());
+                        if (proposal.getTimeToInitialFloor() <= bestProposal) {
+                            bestProposal = proposal.getTimeToInitialFloor();
+                            accept = reply;
+                        }
+                    }
+                }
+
+                if (accept != null)
+                    accept.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
+            }
+        });
+    }
+
     private class BuildingBehaviour extends CyclicBehaviour {
         private long endBlock = System.currentTimeMillis();
 
@@ -78,25 +118,26 @@ public class Building extends MyAgent {
 
         private ArrayList<Request> generateNRequests(final int n) {
             final ArrayList<Request> requests = new ArrayList<>();
-            for (int i = 0; i < n; i++)
-                requests.add(new Request(MyRandom.randomFloor(numFloors)));
+            for (int i = 0; i < n; i++) {
+                // If the elevator does not have a keyboard when creating the request, the destination floor can/will be replaced
+                final int initialFloor = MyRandom.randomFloor(numFloors);
+                final int destinationFloor = MyRandom.randomFloorDifferentThan(initialFloor, numFloors);
+                requests.add(new Request(initialFloor, destinationFloor));
+            }
             return requests;
         }
 
         private void sendRequests(final ArrayList<Request> requests) {
             for (final Request request : requests) {
-                final int elevatorPos = MyRandom.randomInt(0, elevators.size() - 1);
-                if (elevatorsProperties.get(elevatorPos).hasKeyboardOnRequest())
-                    request.setDestinationFloor(MyRandom.randomFloorDifferentThan(request.getInitialFloor(), numFloors));    // shouldn't be here
-
                 final MessageContent messageContent = new MessageContent(request.getInitialFloor(), request.getDestinationFloor(), Long.MAX_VALUE);
-
-                final ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
+                final ACLMessage msg = new ACLMessage(ACLMessage.CFP);
+                msg.setProtocol(FIPANames.InteractionProtocol.FIPA_CONTRACT_NET);
+                msg.setReplyByDate(new Date(System.currentTimeMillis() + 2 * Timer.ONE_SECOND));
                 msg.setSender(myAgent.getAID());
-                msg.addReceiver(elevators.get(elevatorPos));
-                msg.setProtocol(agentType);
+                for (AID elevatorAID : elevators)
+                    msg.addReceiver(elevatorAID);
                 msg.setContent(messageContent.toString());
-                send(msg);
+                setupContractNetInitiatorBehaviour(msg);
             }
         }
     }
