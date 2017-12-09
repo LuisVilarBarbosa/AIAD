@@ -1,4 +1,5 @@
 import jade.core.AID;
+import jade.core.Location;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
@@ -54,11 +55,9 @@ public class MyInterface extends MyAgent {
     }
 
     @Override
-    protected void takeDown() {
-        super.takeDown();
-        deregisterOnDFService();
+    public void doMove(Location destination) {
+        display("Move not allowed because this agent is connected to a graphical window.");
     }
-
 
     private void updateGUI() {
         int i = 0;

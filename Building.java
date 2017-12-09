@@ -48,12 +48,6 @@ public class Building extends MyAgent {
         addBehaviour(new BuildingBehaviour());
     }
 
-    @Override
-    protected void takeDown() {
-        super.takeDown();
-        deregisterOnDFService();
-    }
-
     private void generateElevatorsAgents() {
         final AgentContainer containerController = this.getContainerController();
         for (int i = 0; i < numElevators; i++)

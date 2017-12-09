@@ -43,12 +43,6 @@ public class Elevator extends MyAgent {
         updateInterface();
     }
 
-    @Override
-    protected void takeDown() {
-        super.takeDown();
-        deregisterOnDFService();
-    }
-
     private class ElevatorBehaviour extends CyclicBehaviour {
         private int fsm1State = 0;
         private int fsm2State = 0;
@@ -123,6 +117,7 @@ public class Elevator extends MyAgent {
                                     statistics.setMaxWaitTime(waitTime);
                                 final long personEntranceTime = properties.getPersonEntranceTime();
                                 blockEnd = blockStart + personEntranceTime;
+                                fsm2State = (fsm2State + 1) % 2;
                                 blockBehaviour(personEntranceTime, this);
                             }
                             break;
@@ -135,11 +130,11 @@ public class Elevator extends MyAgent {
                                 request.setDestinationFloor(MyRandom.randomFloorDifferentThan(request.getInitialFloor(), properties.getNumFloors()));
                             updateInterface();
                             cyclePos++;
+                            fsm2State = (fsm2State + 1) % 2;
                             break;
                         default:
                             displayError("Bug on peopleEntrance()");
                     }
-                    fsm2State = (fsm2State + 1) % 2;
                     break;
                 } else
                     cyclePos++;
@@ -180,17 +175,19 @@ public class Elevator extends MyAgent {
         }
 
         private int generateWeight() {
-            final int maxAttempts = 5;
-            int nextCurrentWeight, newWeight, attempt = 0;
+            final int currentWeight = state.getCurrentWeight();
+            final int minNewWeight = 60;
+            final int maxWeight = properties.getMaxWeight();
+            if(currentWeight + minNewWeight > maxWeight)
+                return 0;
+
+            int nextCurrentWeight, newWeight;
             do {
-                newWeight = MyRandom.randomInt(60, 100);
+                newWeight = MyRandom.randomInt(minNewWeight, 100);
                 if (MyRandom.randomInt(0, 100) == 0)
                     newWeight += MyRandom.randomInt(20, 100);
-                nextCurrentWeight = state.getCurrentWeight() + newWeight;
-                attempt++;
-            } while ((nextCurrentWeight < 0 || nextCurrentWeight > properties.getMaxWeight()) && attempt < maxAttempts);
-            if (attempt >= maxAttempts)
-                newWeight = 0;
+                nextCurrentWeight = currentWeight + newWeight;
+            } while (nextCurrentWeight > maxWeight);
             return newWeight;
         }
 

@@ -7,6 +7,17 @@ import jade.domain.FIPAException;
 
 public class MyAgent extends Agent {
 
+    @Override
+    protected void takeDown() {
+        super.takeDown();
+        deregisterOnDFService();
+    }
+
+    @Override
+    public void doDelete() {
+        display("State change request to 'deleted' ignored.");
+    }
+
     protected void blockBehaviour(final long millis, Behaviour behaviour) {
         if (millis > 0)
             behaviour.block(millis);
