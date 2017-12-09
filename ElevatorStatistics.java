@@ -125,6 +125,7 @@ public class ElevatorStatistics {
         if (uptime < 0)
             throw new IllegalArgumentException("Invalid uptime: " + uptime);
         this.uptime = uptime;
+        updateUseRate();
     }
 
     public long getDowntime() {
@@ -135,15 +136,14 @@ public class ElevatorStatistics {
         if (downtime < 0)
             throw new IllegalArgumentException("Invalid downtime: " + downtime);
         this.downtime = downtime;
+        updateUseRate();
     }
 
     public double getUseRate() {
         return useRate;
     }
 
-    public void setUseRate(double useRate) {
-        if (useRate < 0 || useRate > 100)
-            throw new IllegalArgumentException("Invalid use rate: " + useRate);
-        this.useRate = useRate;
+    private void updateUseRate() {
+        this.useRate = this.uptime * 100.0 / (this.uptime + this.downtime);
     }
 }

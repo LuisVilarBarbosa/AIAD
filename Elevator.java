@@ -50,33 +50,33 @@ public class Elevator extends MyAgent {
     }
 
     private class ElevatorBehaviour extends CyclicBehaviour {
-        private int FSMstate = 0;
-        private long endBlock = System.currentTimeMillis();
+        private int fsm1State = 0;
+        private int fsm2State = 0;
         private int cyclePos = 0;
-        private int cycleState = 0;
-        private long begin;
+        private long blockStart = System.currentTimeMillis();
+        private long blockEnd = blockStart;
 
         @Override
         public void action() {
             final long currentMillis = System.currentTimeMillis();
-            if (endBlock >= currentMillis) {
-                blockBehaviour(endBlock - currentMillis, this);
+            if (blockEnd >= currentMillis) {
+                blockBehaviour(blockEnd - currentMillis, this);
                 return;
             }
 
             /*if(myAgent.getAID().getLocalName().equals("Elevator1"))
-                System.err.println(FSMstate + " " + cyclePos + " " + cycleState);*/
+                displayError(fsm1State + " " + cyclePos + " " + fsm2State);*/
 
-            switch (FSMstate) {
+            switch (fsm1State) {
                 case 0:
                     receiveRequests();
                     proposeRequestToOthers();
-                    FSMstate = (FSMstate + 1) % 5;
+                    fsm1State = (fsm1State + 1) % 5;
                     break;
                 case 1:
                     peopleEntrance();
                     if (cyclePos >= internalRequests.size()) {
-                        FSMstate = (FSMstate + 1) % 5;
+                        fsm1State = (fsm1State + 1) % 5;
                         cyclePos = 0;
                     }
                     break;
@@ -86,23 +86,23 @@ public class Elevator extends MyAgent {
                     final int diff = nextFloorToStop - currentFloor;
                     state.setMovementState(diff > 0 ? ElevatorState.GOING_UP : (diff < 0 ? ElevatorState.GOING_DOWN : ElevatorState.STOPPED));
                     updateInterface(nextFloorToStop);
-                    FSMstate = (FSMstate + 1) % 5;
+                    fsm1State = (fsm1State + 1) % 5;
                     break;
                 case 3:
                     if (state.getMovementState() != ElevatorState.STOPPED)
                         moveOneFloor();
                     else
-                        FSMstate = (FSMstate + 1) % 5;
+                        fsm1State = (fsm1State + 1) % 5;
                     break;
                 case 4:
                     peopleExit();
                     if (cyclePos >= internalRequests.size()) {
-                        FSMstate = (FSMstate + 1) % 5;
+                        fsm1State = (fsm1State + 1) % 5;
                         cyclePos = 0;
                     }
                     break;
                 default:
-                    System.err.println("Bug found");
+                    displayError(myAgent, "Bug on action()");
                     break;
             }
         }
@@ -110,33 +110,34 @@ public class Elevator extends MyAgent {
         private void peopleEntrance() {
             state.setMovementState(ElevatorState.STOPPED);
             while (cyclePos < internalRequests.size()) {
-                Request request = internalRequests.get(cyclePos);
+                final Request request = internalRequests.get(cyclePos);
                 if (request.getInitialFloor() == state.getCurrentFloor()) {
-                    switch (cycleState) {
+                    switch (fsm2State) {
                         case 0:
-                            begin = System.currentTimeMillis();
-                            long waitTime = begin - request.getCreationTime();
+                            blockStart = System.currentTimeMillis();
+                            final long waitTime = blockStart - request.getCreationTime();
                             if (waitTime < statistics.getMinWaitTime())
                                 statistics.setMinWaitTime(waitTime);
                             if (waitTime > statistics.getMaxWaitTime())
                                 statistics.setMaxWaitTime(waitTime);
-                            endBlock = System.currentTimeMillis() + properties.getPersonEntranceTime();
-                            blockBehaviour(properties.getPersonEntranceTime(), this);
+                            final long personEntranceTime = properties.getPersonEntranceTime();
+                            blockEnd = blockStart + personEntranceTime;
+                            blockBehaviour(personEntranceTime, this);
                             break;
                         case 1:
-                            statistics.setPeopleEntranceTime(statistics.getPeopleEntranceTime() + System.currentTimeMillis() - begin);
+                            statistics.setPeopleEntranceTime(statistics.getPeopleEntranceTime() + System.currentTimeMillis() - blockStart);
                             state.setNumPeople(state.getNumPeople() + 1);
                             request.setAttended(generateWeight());
+                            updateWeight();
                             if (!properties.hasKeyboardOnRequest())
                                 request.setDestinationFloor(MyRandom.randomFloorDifferentThan(request.getInitialFloor(), properties.getNumFloors()));
-                            updateWeight();
                             updateInterface();
                             cyclePos++;
                             break;
                         default:
-                            System.err.println("Shouldn't be here.");
+                            displayError(myAgent, "Bug on peopleEntrance()");
                     }
-                    cycleState = (cycleState + 1) % 2;
+                    fsm2State = (fsm2State + 1) % 2;
                     break;
                 } else
                     cyclePos++;
@@ -146,7 +147,7 @@ public class Elevator extends MyAgent {
         private int getClosestTo(final int number) {
             int closestRequestFloor = Integer.MIN_VALUE;
             int bestDistance = Integer.MAX_VALUE;
-            for (Request request : internalRequests) {
+            for (final Request request : internalRequests) {
                 if (request.isAttended()) {
                     final int distance = Math.abs(number - request.getDestinationFloor());
                     if (distance < bestDistance) {
@@ -189,25 +190,24 @@ public class Elevator extends MyAgent {
         }
 
         private void moveOneFloor() {
-            switch (cycleState) {
+            switch (fsm2State) {
                 case 0:
-                    begin = System.currentTimeMillis();
-                    endBlock = System.currentTimeMillis() + properties.getMovementTime();
-                    blockBehaviour(properties.getMovementTime(), this);
+                    final long movementTime = properties.getMovementTime();
+                    blockStart = System.currentTimeMillis();
+                    blockEnd = blockStart + movementTime;
+                    blockBehaviour(movementTime, this);
                     break;
                 case 1:
                     updateFloorBasedOnMovementState();
                     state.setMovementState(ElevatorState.STOPPED);
-                    statistics.setUptime(statistics.getUptime() + System.currentTimeMillis() - begin);
+                    statistics.setUptime(statistics.getUptime() + System.currentTimeMillis() - blockStart);
                     statistics.setDowntime(System.currentTimeMillis() - startupTime - statistics.getUptime());
-                    statistics.setUseRate(statistics.getUptime() * 100.0 / (statistics.getUptime() + statistics.getDowntime()));
-                    cyclePos = internalRequests.size();   // to remove
                     updateInterface();
                     break;
                 default:
-                    System.err.println("Shouldn't be here");
+                    displayError(myAgent, "Bug on moveOneFloor()");
             }
-            cycleState = (cycleState + 1) % 2;
+            fsm2State = (fsm2State + 1) % 2;
         }
 
         private void updateFloorBasedOnMovementState() {
@@ -228,25 +228,26 @@ public class Elevator extends MyAgent {
         private void peopleExit() {
             state.setMovementState(ElevatorState.STOPPED);
             while (cyclePos < internalRequests.size()) {
-                Request request = internalRequests.get(cyclePos);
+                final Request request = internalRequests.get(cyclePos);
                 if (request.isAttended() && request.getDestinationFloor() == state.getCurrentFloor()) {
-                    switch (cycleState) {
+                    switch (fsm2State) {
                         case 0:
-                            begin = System.currentTimeMillis();
-                            endBlock = System.currentTimeMillis() + properties.getPersonExitTime();
-                            blockBehaviour(properties.getPersonExitTime(), this);
+                            final long personExitTime = properties.getPersonExitTime();
+                            blockStart = System.currentTimeMillis();
+                            blockEnd = blockStart + personExitTime;
+                            blockBehaviour(personExitTime, this);
                             break;
                         case 1:
                             internalRequests.remove(cyclePos);
-                            statistics.setPeopleExitTime(statistics.getPeopleExitTime() + System.currentTimeMillis() - begin);
+                            statistics.setPeopleExitTime(statistics.getPeopleExitTime() + System.currentTimeMillis() - blockStart);
                             state.setNumPeople(state.getNumPeople() - 1);
                             updateWeight();
                             updateInterface();
                             break;
                         default:
-                            display("Shouldn't be here");
+                            display("Bug on peopleExit()");
                     }
-                    cycleState = (cycleState + 1) % 2;
+                    fsm2State = (fsm2State + 1) % 2;
                     break;
                 } else
                     cyclePos++;
