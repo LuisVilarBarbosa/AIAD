@@ -1,7 +1,7 @@
 public class BuildingProperties {
     private final int numFloors;
     private final int numElevators;
-    private final boolean keyboardOnRequest;
+    private final boolean keyboardForRequest;
     private final boolean elevatorsNegotiationAllowed;
 
     public BuildingProperties(int numFloors, int numElevators, boolean keyboardOnRequest, boolean elevatorsNegotiationAllowed) {
@@ -11,7 +11,7 @@ public class BuildingProperties {
             throw new IllegalArgumentException("Invalid number of elevators: " + numElevators);
         this.numFloors = numFloors;
         this.numElevators = numElevators;
-        this.keyboardOnRequest = keyboardOnRequest;
+        this.keyboardForRequest = keyboardOnRequest;
         this.elevatorsNegotiationAllowed = elevatorsNegotiationAllowed;
     }
 
@@ -23,8 +23,8 @@ public class BuildingProperties {
         return numElevators;
     }
 
-    public boolean hasKeyboardOnRequest() {
-        return keyboardOnRequest;
+    public boolean hasKeyboardForRequest() {
+        return keyboardForRequest;
     }
 
     public boolean isElevatorsNegotiationAllowed() {

@@ -126,7 +126,7 @@ public class Elevator extends MyAgent {
                             state.setNumPeople(state.getNumPeople() + 1);
                             request.setAttended(newWeight);
                             updateWeight();
-                            if (!buildingProperties.hasKeyboardOnRequest())
+                            if (!buildingProperties.hasKeyboardForRequest())
                                 request.setDestinationFloor(MyRandom.randomFloorDifferentThan(request.getInitialFloor(), buildingProperties.getNumFloors()));
                             updateInterface();
                             cyclePos++;

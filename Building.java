@@ -119,7 +119,7 @@ public class Building extends MyAgent {
             final ArrayList<Request> requests = new ArrayList<>();
             for (int i = 0; i < n; i++) {
                 final int initialFloor = MyRandom.randomFloor(properties.getNumFloors());
-                if (properties.hasKeyboardOnRequest()) {
+                if (properties.hasKeyboardForRequest()) {
                     final int destinationFloor = MyRandom.randomFloorDifferentThan(initialFloor, properties.getNumFloors());
                     requests.add(new Request(initialFloor, destinationFloor));
                 } else

@@ -23,7 +23,7 @@ public class MyBoot extends Boot {
     private static final String NUM_REQUESTS_PER_INTERVAL = "numRequestsPerInterval";
     private static final String PERSON_ENTRANCE_TIME = "personEntranceTime";
     private static final String PERSON_EXIT_TIME = "personExitTime";
-    private static final String KEYBOARD_ON_REQUEST = "keyboardOnRequest";
+    private static final String KEYBOARD_FOR_REQUEST = "keyboardForRequest";
     private static final String STATISTICS_FILENAME = "statisticsFilename";
     private static final String ELEVATORS_NEGOTIATION_ALLOWED = "elevatorsNegotiationAllowed";
     private static final String DEFAULT_NUM_FLOORS = "3";
@@ -34,7 +34,7 @@ public class MyBoot extends Boot {
     private static final String DEFAULT_NUM_REQUESTS_PER_INTERVAL = "rand";
     private static final String DEFAULT_PERSON_ENTRANCE_TIME = "1000";
     private static final String DEFAULT_PERSON_EXIT_TIME = "1000";
-    private static final String DEFAULT_KEYBOARD_ON_REQUEST = "false";
+    private static final String DEFAULT_KEYBOARD_FOR_REQUEST = "false";
     private static final String DEFAULT_STATISTICS_FILENAME = "ElevatorsStatistics.txt";
     private static final String DEFAULT_ELEVATORS_NEGOTIATION_ALLOWED = "true";
 
@@ -89,9 +89,9 @@ public class MyBoot extends Boot {
                 final long reqGenInterval = Integer.parseInt(p.getParameter(REQUEST_GENERATION_INTERVAL, DEFAULT_REQUEST_GENERATION_INTERVAL));
                 final String numRequestsPerIntervalStr = p.getParameter(NUM_REQUESTS_PER_INTERVAL, DEFAULT_NUM_REQUESTS_PER_INTERVAL);
                 final String statisticsFilename = p.getParameter(STATISTICS_FILENAME, DEFAULT_STATISTICS_FILENAME);
-                final String keyboardOnReqStr = p.getParameter(KEYBOARD_ON_REQUEST, DEFAULT_KEYBOARD_ON_REQUEST);
+                final String keyboardForReqStr = p.getParameter(KEYBOARD_FOR_REQUEST, DEFAULT_KEYBOARD_FOR_REQUEST);
                 final String elevatorsNegotiationAllowedStr = p.getParameter(ELEVATORS_NEGOTIATION_ALLOWED, DEFAULT_ELEVATORS_NEGOTIATION_ALLOWED);
-                final boolean keyboardOnReq = parseStringToBoolean(keyboardOnReqStr, KEYBOARD_ON_REQUEST);
+                final boolean keyboardForReq = parseStringToBoolean(keyboardForReqStr, KEYBOARD_FOR_REQUEST);
                 final boolean elevatorsNegotiationAllowed = parseStringToBoolean(elevatorsNegotiationAllowedStr, ELEVATORS_NEGOTIATION_ALLOWED);
 
                 final ArrayList<ElevatorProperties> elevatorsProperties = new ArrayList<>();
@@ -104,7 +104,7 @@ public class MyBoot extends Boot {
                     elevatorsProperties.add(elevatorProperties);
                 }
 
-                BuildingProperties buildingProperties = new BuildingProperties(numFloors, numElevators, keyboardOnReq, elevatorsNegotiationAllowed);
+                BuildingProperties buildingProperties = new BuildingProperties(numFloors, numElevators, keyboardForReq, elevatorsNegotiationAllowed);
                 Building building;
                 if (numRequestsPerIntervalStr.equalsIgnoreCase("rand"))
                     building = new Building(buildingProperties, reqGenInterval, elevatorsProperties);
@@ -134,7 +134,7 @@ public class MyBoot extends Boot {
     public static void printUsage() {
         String usage = "\nUsage:\n" +
                 "Command-type 1: java -classpath \"jade.jar;.\" MyBoot [<filename>]\n" +
-                "Command-type 2: java -classpath \"jade.jar;.\" MyBoot [-gui] -" + NUM_FLOORS_PARAMETER + " 5 -" + NUM_ELEVATORS_PARAMETER + " 3 -" + MAX_WEIGHT_PARAMETER + "0 100 -" + MAX_WEIGHT_PARAMETER + "1 200 -" + MAX_WEIGHT_PARAMETER + "2 300 -" + MOVEMENT_TIME_PARAMETER + "0 1000 -" + MOVEMENT_TIME_PARAMETER + "1 500 -" + MOVEMENT_TIME_PARAMETER + "2 2000 -" + PERSON_ENTRANCE_TIME + "0 1000 -" + PERSON_ENTRANCE_TIME + "1 1000 -" + PERSON_ENTRANCE_TIME + "2 1000 -" + PERSON_EXIT_TIME + "0 1000 -" + PERSON_EXIT_TIME + "1 1000 -" + PERSON_EXIT_TIME + "2 1000 -" + KEYBOARD_ON_REQUEST + " false -" + STATISTICS_FILENAME + " " + DEFAULT_STATISTICS_FILENAME + " -" + ELEVATORS_NEGOTIATION_ALLOWED + " " + DEFAULT_ELEVATORS_NEGOTIATION_ALLOWED + "\n\n" +
+                "Command-type 2: java -classpath \"jade.jar;.\" MyBoot [-gui] -" + NUM_FLOORS_PARAMETER + " 5 -" + NUM_ELEVATORS_PARAMETER + " 3 -" + MAX_WEIGHT_PARAMETER + "0 100 -" + MAX_WEIGHT_PARAMETER + "1 200 -" + MAX_WEIGHT_PARAMETER + "2 300 -" + MOVEMENT_TIME_PARAMETER + "0 1000 -" + MOVEMENT_TIME_PARAMETER + "1 500 -" + MOVEMENT_TIME_PARAMETER + "2 2000 -" + PERSON_ENTRANCE_TIME + "0 1000 -" + PERSON_ENTRANCE_TIME + "1 1000 -" + PERSON_ENTRANCE_TIME + "2 1000 -" + PERSON_EXIT_TIME + "0 1000 -" + PERSON_EXIT_TIME + "1 1000 -" + PERSON_EXIT_TIME + "2 1000 -" + KEYBOARD_FOR_REQUEST + " false -" + STATISTICS_FILENAME + " " + DEFAULT_STATISTICS_FILENAME + " -" + ELEVATORS_NEGOTIATION_ALLOWED + " " + DEFAULT_ELEVATORS_NEGOTIATION_ALLOWED + "\n\n" +
                 "For command-type 1, if no filename is indicated, it will use the default file with name '" + DEFAULT_FILENAME + "'.\n" +
                 "For command-type 2, there should be as many '" + MAX_WEIGHT_PARAMETER + "X', '" + MOVEMENT_TIME_PARAMETER + "X', '" + PERSON_ENTRANCE_TIME + "X' and '" + PERSON_EXIT_TIME + "X' as elevators.\n" +
                 "For both commands types, if some of the values are not indicated, the corresponding default will be associated to the missing value:\n" +
@@ -146,7 +146,7 @@ public class MyBoot extends Boot {
                 "  " + NUM_REQUESTS_PER_INTERVAL + "=" + DEFAULT_NUM_REQUESTS_PER_INTERVAL + "\n" +
                 "  " + PERSON_ENTRANCE_TIME + "=" + DEFAULT_PERSON_ENTRANCE_TIME + "\n" +
                 "  " + PERSON_EXIT_TIME + "=" + DEFAULT_PERSON_EXIT_TIME + "\n" +
-                "  " + KEYBOARD_ON_REQUEST + "=" + DEFAULT_KEYBOARD_ON_REQUEST + "\n" +
+                "  " + KEYBOARD_FOR_REQUEST + "=" + DEFAULT_KEYBOARD_FOR_REQUEST + "\n" +
                 "  " + STATISTICS_FILENAME + "=" + DEFAULT_STATISTICS_FILENAME + "\n" +
                 "  " + ELEVATORS_NEGOTIATION_ALLOWED + "=" + DEFAULT_ELEVATORS_NEGOTIATION_ALLOWED + "\n\n" +
                 "Additional options (MyBoot extends Boot):\n";
