@@ -89,8 +89,8 @@ public class Building extends MyAgent {
                         reply.setPerformative(ACLMessage.REJECT_PROPOSAL);
                         acceptances.addElement(reply);
                         final MessageContent proposal = new MessageContent(msg.getContent());
-                        if (proposal.getTimeToInitialFloor() <= bestProposal) {
-                            bestProposal = proposal.getTimeToInitialFloor();
+                        if (proposal.getTimeToCompleteRequest() <= bestProposal) {
+                            bestProposal = proposal.getTimeToCompleteRequest();
                             accept = reply;
                         }
                     }

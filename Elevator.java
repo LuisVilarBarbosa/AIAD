@@ -294,8 +294,9 @@ public class Elevator extends MyAgent {
                 Request requestToSend = null;
                 for (Request request : internalRequests) {
                     if (!request.isAttended()) {
-                        final long timeToInitialFloor = expectedTimeToFloor(request.getInitialFloor());
-                        final long waitTime = currentTime - request.getCreationTime() + timeToInitialFloor;
+                        final long timeToInitialFloor = expectedTimeBetweenFloors(state.getCurrentFloor(), request.getInitialFloor());
+                        final long timeToCompleteRequest = timeToInitialFloor + expectedTimeBetweenFloors(request.getInitialFloor(), request.getDestinationFloor());
+                        final long waitTime = currentTime - request.getCreationTime() + timeToCompleteRequest;
                         if (waitTime > largestWaitTime) {
                             largestWaitTime = waitTime;
                             requestToSend = request;
@@ -364,8 +365,8 @@ public class Elevator extends MyAgent {
                         reply.setPerformative(ACLMessage.REJECT_PROPOSAL);
                         acceptances.addElement(reply);
                         MessageContent proposal = new MessageContent(msg.getContent());
-                        if (proposal.getTimeToInitialFloor() <= bestProposal) {
-                            bestProposal = proposal.getTimeToInitialFloor();
+                        if (proposal.getTimeToCompleteRequest() <= bestProposal) {
+                            bestProposal = proposal.getTimeToCompleteRequest();
                             bestProposer = msg.getSender();
                             accept = reply;
                             acceptedRequest = proposal;
@@ -420,8 +421,9 @@ public class Elevator extends MyAgent {
                 display(cfp.getSender().getLocalName() + " sent action " + cfp.getContent());
                 final MessageContent proposedRequest = new MessageContent(cfp.getContent());
                 final ACLMessage propose = cfp.createReply();
-                long myTimeToInitialFloor = expectedTimeToFloor(proposedRequest.getInitialFloor());
-                if (myTimeToInitialFloor <= proposedRequest.getTimeToInitialFloor()) {
+                final long myTimeToInitialFloor = expectedTimeBetweenFloors(state.getCurrentFloor(), proposedRequest.getInitialFloor());
+                final long myTimeToCompleteRequest = myTimeToInitialFloor + expectedTimeBetweenFloors(proposedRequest.getInitialFloor(), proposedRequest.getDestinationFloor());
+                if (myTimeToCompleteRequest <= proposedRequest.getTimeToCompleteRequest()) {
                     display(cfp.getSender().getLocalName() + " sent request proposed with " + myTimeToInitialFloor);
                     propose.setPerformative(ACLMessage.PROPOSE);
                     final MessageContent myPropose = new MessageContent(proposedRequest.getInitialFloor(), proposedRequest.getDestinationFloor(), myTimeToInitialFloor);
@@ -455,7 +457,7 @@ public class Elevator extends MyAgent {
         updateInterface(state.getCurrentFloor());
     }
 
-    private void updateInterface(int nextFloorToStop) {
+    private void updateInterface(final int nextFloorToStop) {
         final ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
         msg.setSender(this.getAID());
         msg.addReceiver(this.getAID(MyInterface.agentType));
@@ -489,19 +491,18 @@ public class Elevator extends MyAgent {
                 MyInterface.separator + properties.getPersonExitTime();
     }
 
-    private long expectedTimeToFloor(int floor) {
-        final int currentFloor = state.getCurrentFloor();
-        long time = properties.getMovementTime() * Math.abs(floor - currentFloor);
+    private long expectedTimeBetweenFloors(final int floor1, final int floor2) {
+        long time = properties.getMovementTime() * Math.abs(floor1 - floor2);
         for (Request request : internalRequests) {
-            if (request.isAttended() && isBetween(floor, currentFloor, request.getDestinationFloor()))
+            if (request.isAttended() && isBetween(request.getDestinationFloor(), floor1, floor2))
                 time += properties.getPersonExitTime();
-            else if (isBetween(floor, currentFloor, request.getInitialFloor()))
+            else if (isBetween(request.getInitialFloor(), floor1, floor2))
                 time += properties.getPersonEntranceTime();
         }
         return time;
     }
 
-    private boolean isBetween(int number, int v1, int v2) {
+    private boolean isBetween(final int number, final int v1, final int v2) {
         if (v1 <= v2)
             return v1 < number && number < v2;
         else
