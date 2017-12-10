@@ -8,12 +8,15 @@ import jade.wrapper.AgentController;
 import jade.wrapper.ContainerController;
 import jade.wrapper.StaleProxyException;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 
 // Some info about JADE agents in https://pt.slideshare.net/AryanRathore4/all-about-agents-jade
 
 // Based on the Boot class source code of the version 4.5.0
 public class MyBoot extends Boot {
+    public static final int exitCodeOnError = -1;
     private static final String DEFAULT_FILENAME = "default.properties";
     private static final String NUM_FLOORS_PARAMETER = "numFloors";
     private static final String NUM_ELEVATORS_PARAMETER = "numElevators";
@@ -83,51 +86,51 @@ public class MyBoot extends Boot {
 			Runtime.instance().startUp(p);
 			#PJAVA_INCLUDE_END*/
 
-            try {
-                final int numFloors = Integer.parseInt(p.getParameter(NUM_FLOORS_PARAMETER, DEFAULT_NUM_FLOORS));
-                final int numElevators = Integer.parseInt(p.getParameter(NUM_ELEVATORS_PARAMETER, DEFAULT_NUM_ELEVATORS));
-                final long reqGenInterval = Integer.parseInt(p.getParameter(REQUEST_GENERATION_INTERVAL, DEFAULT_REQUEST_GENERATION_INTERVAL));
-                final String numRequestsPerIntervalStr = p.getParameter(NUM_REQUESTS_PER_INTERVAL, DEFAULT_NUM_REQUESTS_PER_INTERVAL);
-                final String statisticsFilename = p.getParameter(STATISTICS_FILENAME, DEFAULT_STATISTICS_FILENAME);
-                final String keyboardForReqStr = p.getParameter(KEYBOARD_FOR_REQUEST, DEFAULT_KEYBOARD_FOR_REQUEST);
-                final String elevatorsNegotiationAllowedStr = p.getParameter(ELEVATORS_NEGOTIATION_ALLOWED, DEFAULT_ELEVATORS_NEGOTIATION_ALLOWED);
-                final boolean keyboardForReq = parseStringToBoolean(keyboardForReqStr, KEYBOARD_FOR_REQUEST);
-                final boolean elevatorsNegotiationAllowed = parseStringToBoolean(elevatorsNegotiationAllowedStr, ELEVATORS_NEGOTIATION_ALLOWED);
+            final int numFloors = Integer.parseInt(p.getParameter(NUM_FLOORS_PARAMETER, DEFAULT_NUM_FLOORS));
+            final int numElevators = Integer.parseInt(p.getParameter(NUM_ELEVATORS_PARAMETER, DEFAULT_NUM_ELEVATORS));
+            final long reqGenInterval = Integer.parseInt(p.getParameter(REQUEST_GENERATION_INTERVAL, DEFAULT_REQUEST_GENERATION_INTERVAL));
+            final String numRequestsPerIntervalStr = p.getParameter(NUM_REQUESTS_PER_INTERVAL, DEFAULT_NUM_REQUESTS_PER_INTERVAL);
+            final String statisticsFilename = p.getParameter(STATISTICS_FILENAME, DEFAULT_STATISTICS_FILENAME);
+            final String keyboardForReqStr = p.getParameter(KEYBOARD_FOR_REQUEST, DEFAULT_KEYBOARD_FOR_REQUEST);
+            final String elevatorsNegotiationAllowedStr = p.getParameter(ELEVATORS_NEGOTIATION_ALLOWED, DEFAULT_ELEVATORS_NEGOTIATION_ALLOWED);
+            final boolean keyboardForReq = parseStringToBoolean(keyboardForReqStr, KEYBOARD_FOR_REQUEST);
+            final boolean elevatorsNegotiationAllowed = parseStringToBoolean(elevatorsNegotiationAllowedStr, ELEVATORS_NEGOTIATION_ALLOWED);
+            verifyFile(statisticsFilename);
 
-                final ArrayList<ElevatorProperties> elevatorsProperties = new ArrayList<>();
-                for (int i = 0; i < numElevators; i++) {
-                    final int maxWeight = Integer.parseInt(p.getParameter(MAX_WEIGHT_PARAMETER + i, DEFAULT_MAX_WEIGHT));
-                    final long movementTime = Long.parseLong(p.getParameter(MOVEMENT_TIME_PARAMETER + i, DEFAULT_MOVEMENT_TIME));
-                    final int entranceTime = Integer.parseInt(p.getParameter(PERSON_ENTRANCE_TIME + i, DEFAULT_PERSON_ENTRANCE_TIME));
-                    final int exitTime = Integer.parseInt(p.getParameter(PERSON_EXIT_TIME + i, DEFAULT_PERSON_EXIT_TIME));
-                    ElevatorProperties elevatorProperties = new ElevatorProperties(maxWeight, movementTime, entranceTime, exitTime);
-                    elevatorsProperties.add(elevatorProperties);
-                }
-
-                BuildingProperties buildingProperties = new BuildingProperties(numFloors, numElevators, keyboardForReq, elevatorsNegotiationAllowed);
-                Building building;
-                if (numRequestsPerIntervalStr.equalsIgnoreCase("rand"))
-                    building = new Building(buildingProperties, reqGenInterval, elevatorsProperties);
-                else
-                    building = new Building(buildingProperties, reqGenInterval, Integer.parseInt(numRequestsPerIntervalStr), elevatorsProperties);
-
-                final AgentController buildingAC = containerController.acceptNewAgent(Building.agentType, building);
-                buildingAC.start();
-                final AgentController myInterfaceAC = containerController.acceptNewAgent(MyInterface.agentType, new MyInterface(numElevators, statisticsFilename));
-                myInterfaceAC.start();
-            } catch (StaleProxyException e) {
-                e.printStackTrace();
+            final ArrayList<ElevatorProperties> elevatorsProperties = new ArrayList<>();
+            for (int i = 0; i < numElevators; i++) {
+                final int maxWeight = Integer.parseInt(p.getParameter(MAX_WEIGHT_PARAMETER + i, DEFAULT_MAX_WEIGHT));
+                final long movementTime = Long.parseLong(p.getParameter(MOVEMENT_TIME_PARAMETER + i, DEFAULT_MOVEMENT_TIME));
+                final int entranceTime = Integer.parseInt(p.getParameter(PERSON_ENTRANCE_TIME + i, DEFAULT_PERSON_ENTRANCE_TIME));
+                final int exitTime = Integer.parseInt(p.getParameter(PERSON_EXIT_TIME + i, DEFAULT_PERSON_EXIT_TIME));
+                ElevatorProperties elevatorProperties = new ElevatorProperties(maxWeight, movementTime, entranceTime, exitTime);
+                elevatorsProperties.add(elevatorProperties);
             }
+
+            BuildingProperties buildingProperties = new BuildingProperties(numFloors, numElevators, keyboardForReq, elevatorsNegotiationAllowed);
+            Building building;
+            if (numRequestsPerIntervalStr.equalsIgnoreCase("rand"))
+                building = new Building(buildingProperties, reqGenInterval, elevatorsProperties);
+            else
+                building = new Building(buildingProperties, reqGenInterval, Integer.parseInt(numRequestsPerIntervalStr), elevatorsProperties);
+
+            final AgentController buildingAC = containerController.acceptNewAgent(Building.agentType, building);
+            buildingAC.start();
+            final AgentController myInterfaceAC = containerController.acceptNewAgent(MyInterface.agentType, new MyInterface(numElevators, statisticsFilename));
+            myInterfaceAC.start();
         } catch (ProfileException pe) {
             Console.displayError("Error creating the Profile [" + pe.getMessage() + "]");
             pe.printStackTrace();
             printUsage();
-            System.exit(-1);
+            System.exit(MyBoot.exitCodeOnError);
         } catch (IllegalArgumentException iae) {
             Console.displayError("Command line arguments format error. " + iae.getMessage());
             iae.printStackTrace();
             printUsage();
-            System.exit(-1);
+            System.exit(MyBoot.exitCodeOnError);
+        } catch (StaleProxyException e) {
+            e.printStackTrace();
+            System.exit(MyBoot.exitCodeOnError);
         }
     }
 
@@ -163,5 +166,19 @@ public class MyBoot extends Boot {
         else
             throw new IllegalArgumentException("Invalid '" + varName + "' mode: " + varValue);
         return bool;
+    }
+
+    private static void verifyFile(final String filename) {
+        final File file = new File(filename);
+        if (!file.exists()) {
+            try {
+                if (!file.createNewFile())
+                    Console.displayError("Unable to create the file '" + filename + "'");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        if (!file.isFile() || !file.canWrite())
+            throw new IllegalArgumentException("'" + filename + "' is not a file or isn't writable.");
     }
 }

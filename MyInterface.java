@@ -30,6 +30,7 @@ public class MyInterface extends MyAgent {
     private final String statisticsFilename;
 
     public MyInterface(final int numElevators, final String statisticsFilename) {
+        super();
         this.elevatorsData = new TreeMap<>();
         final JFrame jFrame = new JFrame(jFrameTitle);
         final JPanel jPanel = new JPanel();

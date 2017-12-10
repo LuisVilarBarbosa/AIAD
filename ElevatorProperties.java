@@ -9,6 +9,10 @@ public class ElevatorProperties {
             throw new IllegalArgumentException("Invalid maximum weight: " + maxWeight);
         if (movementTime < 0)
             throw new IllegalArgumentException("Invalid movement time: " + movementTime);
+        if (personEntranceTime < 0)
+            throw new IllegalArgumentException("Invalid person entrance time: " + personEntranceTime);
+        if (personExitTime < 0)
+            throw new IllegalArgumentException("Invalid person exit time: " + personExitTime);
         this.maxWeight = maxWeight;
         this.movementTime = movementTime;
         this.personEntranceTime = personEntranceTime;

@@ -1,6 +1,5 @@
 import jade.core.behaviours.CyclicBehaviour;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
-import jade.domain.FIPAException;
 import jade.domain.FIPANames;
 import jade.lang.acl.ACLMessage;
 import jade.proto.ContractNetInitiator;
@@ -32,6 +31,8 @@ public class Building extends MyAgent {
 
     private Building(final BuildingProperties properties, final long reqGenInterval, final boolean randNumRequestsPerInterval, final int numRequestsPerInterval, final ArrayList<ElevatorProperties> elevatorsProperties) {
         super();
+        if (properties.getNumElevators() != elevatorsProperties.size())
+            throw new IllegalArgumentException("The number of elevators should be equal to the number of elevators properties");
         if (reqGenInterval < 0)
             throw new IllegalArgumentException("Invalid request generation interval: " + reqGenInterval);
         if (numRequestsPerInterval < 0)
@@ -54,7 +55,7 @@ public class Building extends MyAgent {
 
     private void generateElevatorsAgents() {
         final AgentContainer containerController = this.getContainerController();
-        final int numElevators = elevatorsProperties.size();
+        final int numElevators = properties.getNumElevators();
         for (int i = 0; i < numElevators; i++)
             try {
                 final Elevator elevator = new Elevator(elevatorsProperties.get(i), properties);
@@ -62,6 +63,7 @@ public class Building extends MyAgent {
                 ac.start();
             } catch (StaleProxyException e) {
                 e.printStackTrace();
+                System.exit(MyBoot.exitCodeOnError);
             }
     }
 
@@ -112,14 +114,9 @@ public class Building extends MyAgent {
         @Override
         public void action() {
             if (endBlock < System.currentTimeMillis()) {
-                final int numRequests = randNumRequestsPerInterval ? MyRandom.randomInt(1, 3 * elevatorsProperties.size()) : numRequestsPerInterval;
+                final int numRequests = randNumRequestsPerInterval ? MyRandom.randomInt(1, 3 * properties.getNumElevators()) : numRequestsPerInterval;
                 final ArrayList<Request> requests = generateNRequests(numRequests);
-                try {
-                    sendRequests(requests);
-                } catch (FIPAException e) {
-                    e.printStackTrace();
-                    System.exit(-1);
-                }
+                sendRequests(requests);
                 endBlock = System.currentTimeMillis() + reqGenInterval;
                 blockBehaviour(reqGenInterval, this);
             } else
@@ -139,7 +136,7 @@ public class Building extends MyAgent {
             return requests;
         }
 
-        private void sendRequests(final ArrayList<Request> requests) throws FIPAException {
+        private void sendRequests(final ArrayList<Request> requests) {
             for (final Request request : requests) {
                 final MessageContent messageContent = new MessageContent(request.getInitialFloor(), request.getDestinationFloor(), Long.MAX_VALUE);
                 final ACLMessage msg = new ACLMessage(ACLMessage.CFP);

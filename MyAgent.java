@@ -39,6 +39,7 @@ public class MyAgent extends Agent {
             DFService.register(this, dfd);
         } catch (FIPAException e) {
             e.printStackTrace();
+            System.exit(MyBoot.exitCodeOnError);
         }
     }
 
@@ -54,17 +55,20 @@ public class MyAgent extends Agent {
         Console.display(this.getAID().getLocalName() + ": " + str);
     }
 
-    protected void displayError(final String str) {
-        Console.displayError(this.getAID().getLocalName() + ": " + str);
-    }
-
-    protected DFAgentDescription[] searchOnDFService(String agentType) throws FIPAException {
+    protected DFAgentDescription[] searchOnDFService(String agentType) {
         DFAgentDescription dfAgentDescription = new DFAgentDescription();
         ServiceDescription serviceDescription = new ServiceDescription();
         serviceDescription.setType(agentType);
         dfAgentDescription.addServices(serviceDescription);
         SearchConstraints searchConstraints = new SearchConstraints();
         searchConstraints.setMaxResults((long) -1);
-        return DFService.search(this, dfAgentDescription, searchConstraints);
+        DFAgentDescription dfAgentDescriptions[] = new DFAgentDescription[0];
+        try {
+            dfAgentDescriptions = DFService.search(this, dfAgentDescription, searchConstraints);
+        } catch (FIPAException e) {
+            e.printStackTrace();
+            System.exit(MyBoot.exitCodeOnError);
+        }
+        return dfAgentDescriptions;
     }
 }

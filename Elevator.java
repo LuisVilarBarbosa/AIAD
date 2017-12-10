@@ -4,7 +4,6 @@ import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.FailureException;
 import jade.domain.FIPAAgentManagement.NotUnderstoodException;
 import jade.domain.FIPAAgentManagement.RefuseException;
-import jade.domain.FIPAException;
 import jade.domain.FIPANames;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
@@ -64,37 +63,41 @@ public class Elevator extends MyAgent {
                 return;
             }
 
-            switch (fsm1State) {
-                case 0:
-                    peopleEntrance();
-                    if (cyclePos >= internalRequests.size()) {
+            try {
+                switch (fsm1State) {
+                    case 0:
+                        peopleEntrance();
+                        if (cyclePos >= internalRequests.size()) {
+                            fsm1State = (fsm1State + 1) % 4;
+                            cyclePos = 0;
+                        }
+                        break;
+                    case 1:
+                        final int currentFloor = state.getCurrentFloor();
+                        final int nextFloorToStop = getClosestTo(currentFloor);
+                        final int diff = nextFloorToStop - currentFloor;
+                        state.setMovementState(diff > 0 ? ElevatorState.GOING_UP : (diff < 0 ? ElevatorState.GOING_DOWN : ElevatorState.STOPPED));
+                        updateInterface(nextFloorToStop);
                         fsm1State = (fsm1State + 1) % 4;
-                        cyclePos = 0;
-                    }
-                    break;
-                case 1:
-                    final int currentFloor = state.getCurrentFloor();
-                    final int nextFloorToStop = getClosestTo(currentFloor);
-                    final int diff = nextFloorToStop - currentFloor;
-                    state.setMovementState(diff > 0 ? ElevatorState.GOING_UP : (diff < 0 ? ElevatorState.GOING_DOWN : ElevatorState.STOPPED));
-                    updateInterface(nextFloorToStop);
-                    fsm1State = (fsm1State + 1) % 4;
-                    break;
-                case 2:
-                    if (state.getMovementState() != ElevatorState.STOPPED)
-                        moveOneFloor();
-                    fsm1State = (fsm1State + 1) % 4;
-                    break;
-                case 3:
-                    peopleExit();
-                    if (cyclePos >= internalRequests.size()) {
+                        break;
+                    case 2:
+                        if (state.getMovementState() != ElevatorState.STOPPED)
+                            moveOneFloor();
                         fsm1State = (fsm1State + 1) % 4;
-                        cyclePos = 0;
-                    }
-                    break;
-                default:
-                    displayError("Bug on action()");
-                    break;
+                        break;
+                    case 3:
+                        peopleExit();
+                        if (cyclePos >= internalRequests.size()) {
+                            fsm1State = (fsm1State + 1) % 4;
+                            cyclePos = 0;
+                        }
+                        break;
+                    default:
+                        throw new IllegalStateException("Bug on action()");
+                }
+            } catch (IllegalStateException e) {
+                e.printStackTrace();
+                System.exit(MyBoot.exitCodeOnError);
             }
         }
 
@@ -106,9 +109,10 @@ public class Elevator extends MyAgent {
                         case 0:
                             state.setMovementState(ElevatorState.STOPPED);
                             newWeight = generateWeight();
-                            if (newWeight == 0)
-                                cyclePos++; // Unable to attend request
-                            else {
+                            if (newWeight == 0) {
+                                display("Unable to attend one request for now (too much load)");
+                                cyclePos++;
+                            } else {
                                 blockStart = System.currentTimeMillis();
                                 final long waitTime = blockStart - request.getCreationTime();
                                 if (waitTime < statistics.getMinWaitTime())
@@ -133,7 +137,7 @@ public class Elevator extends MyAgent {
                             fsm2State = (fsm2State + 1) % 2;
                             break;
                         default:
-                            displayError("Bug on peopleEntrance()");
+                            throw new IllegalStateException("Bug on peopleEntrance()");
                     }
                     break;
                 } else
@@ -207,7 +211,7 @@ public class Elevator extends MyAgent {
                     updateInterface();
                     break;
                 default:
-                    displayError("Bug on moveOneFloor()");
+                    throw new IllegalStateException("Bug on moveOneFloor()");
             }
             fsm2State = (fsm2State + 1) % 2;
         }
@@ -247,7 +251,7 @@ public class Elevator extends MyAgent {
                             updateInterface();
                             break;
                         default:
-                            displayError("Bug on peopleExit()");
+                            throw new IllegalStateException("Bug on peopleExit()");
                     }
                     fsm2State = (fsm2State + 1) % 2;
                     break;
@@ -267,17 +271,13 @@ public class Elevator extends MyAgent {
                 blockBehaviour(blockEnd - currentMillis, this);
                 return;
             }
-            try {
-                proposeRequestToOthers();
-            } catch (FIPAException e) {
-                e.printStackTrace();
-                System.exit(-1);
-            }
+
+            proposeRequestToOthers();
             blockEnd = System.currentTimeMillis() + timeout;
             blockBehaviour(timeout, this);
         }
 
-        private void proposeRequestToOthers() throws FIPAException {
+        private void proposeRequestToOthers() {
             if (!internalRequests.isEmpty()) {
                 final ACLMessage aclMessage = new ACLMessage(ACLMessage.CFP);
                 aclMessage.setProtocol(FIPANames.InteractionProtocol.FIPA_CONTRACT_NET);
