@@ -127,13 +127,17 @@ Verifica, também, para todos os pedidos atendidos do elevador, se estes já se 
 
 \subsection{Estratégias e processos de raciocínio} 
 
-De forma a comparar o desempenho dos elevadores com diferentes heurísticas, foram implementadas duas estratégias de alocação de pedidos. Estas duas estratégias suportam outros dois modelos: um em que existe apenas um botão de chamada, e o outro assume a existência de um teclado onde é possível indicar o piso de destino.
+De forma a comparar o desempenho dos elevadores com diferentes heurísticas, foram implementadas quatro estratégias de alocação de pedidos. Estas quatro estratégias suportam um dos seguintes modelos: o primeiro, em que existe apenas um botão de chamada, ou um segundo que assume a existência de um teclado onde é possível indicar o piso de destino.
 
-A \textbf{primeira} estratégia assume o sistema tradicional onde cada elevador possui uma estratégia fixa e individual: atende o pedido o elevador que se encontra mais próximo do piso onde a chamada foi efetuada. Para isto ser possível, os elevadores comunicam entre si através do protocolo de interação que será descrito mais à frente. 
+A \textbf{primeira} estratégia assume o sistema tradicional onde cada elevador possui uma estratégia fixa e individual e segue o primeiro modelo: atende o pedido o elevador que se encontra mais próximo do piso onde a chamada foi efetuada. Para isto ser possível, os elevadores comunicam entre si através do protocolo de interação que será descrito mais à frente. 
 
 Para tornar o envio de requests para outros elevadores melhor, seria necessário pedir-lhes feedback para todos os requests e isso sobrecarregaria a rede de negociação, só se pedindo ajuda para o pior pedido de cada vez. Se não podem ajudar para o pior, provavelmente não podem ajudar para outros. E iterativamente, ao alocar os piores pedidos a outros, optimiza-se/reduz-se os tempos de espera.
 
-A \textbf{segunda} estratégia o elevador já possui a informação de qual é o piso de destino, conseguindo calcular o tempo de espera exato, permitindo uma alocação mais correta dos pedidos.
+A \textbf{segunda} estratégia segue o segundo modelo, onde o elevador já possui a informação de qual é o piso de destino, conseguindo calcular o tempo de espera exato, permitindo uma alocação mais correta dos pedidos.
+
+As duas estratégias anteriores utilizam o protocolo de interação descrito abaixo para que os elevadores negoceiem entre si. Para termos melhores termos de comparação, achamos correto criar outras duas estratégias em que não existe negociação.
+
+Desta forma, a \textbf{terceira} estratégia é idêntica à primeira e a \textbf{quarta} idêntica à segunda, exceto na parte em que negoceiam. Assim, ambas estimam o tempo que o elevador demoraria a responder a um pedido caso fosse alocado a ele.
 
 \subsection{Protocolos de interação} 
 
@@ -223,7 +227,37 @@ Agent     & \begin{tabular}[c]{@{}l@{}}CFPs\\ sent \end{tabular} & \begin{tabula
 Elevator0 & 12        & 27            & 16           & 1                                                               & 13                                                                  & 4045                                                         & 50078                                                 & 64040                                                   & 43.88         \\
 Elevator1 & 10        & 31            & 15           & 3                                                               & 10                                                                  & 7413                                                         & 33428                                                 & 81782                                                   & 29.01         \\
 Elevator2 & 8        & 29            & 19           & 4                                                               & 10                                                                  & 2022                                                         & 47246                                                 & 73067                                                   & 39.27         \\
-Average   & 10     & 29         & 16.67        & 2.67                                                               & 11                                                               & 4493                                                         & 4354                                                 & 72963                                                   & 37.39          \\ \bottomrule
+Average   & 10     & 29         & 16.67        & 2.67                                                               & 11                                                               & 4493                                                         & 43584                                                 & 72963                                                   & 37.39          \\ \bottomrule
+\end{tabular}
+\end{table}
+
+Utilizando a terceira estratégia,
+
+\begin{table}[h]
+\centering
+\hspace*{-3.2cm}
+\begin{tabular}{@{}llllllllll@{}}
+\toprule
+Agent     & \begin{tabular}[c]{@{}l@{}}CFPs\\ sent \end{tabular} & \begin{tabular}[c]{@{}l@{}}Proposes\\ sent\end{tabular} & \begin{tabular}[c]{@{}l@{}}Refuses\\ sent\end{tabular} & \begin{tabular}[c]{@{}l@{}}Accept\\ proposals sent\end{tabular} & \begin{tabular}[c]{@{}l@{}}Accept proposals\\ received\end{tabular} & \begin{tabular}[c]{@{}l@{}}Max wait\\ time (ms)\end{tabular} & \begin{tabular}[c]{@{}l@{}}Uptime\\ (ms)\end{tabular} & \begin{tabular}[c]{@{}l@{}}Downtime\\ (ms)\end{tabular} &\begin{tabular}[c]{@{}l@{}}Use \\rate (\%) \end{tabular} \\ \midrule
+Elevator0 & 0        & 26            & 0           & 0                                                               & 10                                                                  & 7012                                                         & 61079                                                 & 57999                                                   & 51.3         \\
+Elevator1 & 0        & 26           & 0           & 0                                                               & 10                                                                  & 6150                                                         & 43462                                                 & 68606                                                   & 38.8         \\
+Elevator2 & 0        & 25            & 0           & 0                                                               & 5                                                                  & 6010                                                         & 20024                                                 & 72032                                                   & 21.8         \\
+Average   & 0     & 25.67         & 0        & 0                                                               & 8.33                                                               & 6390                                                         & 41522                                                 & 66216                                                   & 37.3          \\ \bottomrule
+\end{tabular}
+\end{table}
+
+Utilizando a quarta estratégia,
+
+\begin{table}[h]
+\centering
+\hspace*{-3.2cm}
+\begin{tabular}{@{}llllllllll@{}}
+\toprule
+Agent     & \begin{tabular}[c]{@{}l@{}}CFPs\\ sent \end{tabular} & \begin{tabular}[c]{@{}l@{}}Proposes\\ sent\end{tabular} & \begin{tabular}[c]{@{}l@{}}Refuses\\ sent\end{tabular} & \begin{tabular}[c]{@{}l@{}}Accept\\ proposals sent\end{tabular} & \begin{tabular}[c]{@{}l@{}}Accept proposals\\ received\end{tabular} & \begin{tabular}[c]{@{}l@{}}Max wait\\ time (ms)\end{tabular} & \begin{tabular}[c]{@{}l@{}}Uptime\\ (ms)\end{tabular} & \begin{tabular}[c]{@{}l@{}}Downtime\\ (ms)\end{tabular} &\begin{tabular}[c]{@{}l@{}}Use \\rate (\%) \end{tabular} \\ \midrule
+Elevator0 & 0        & 26            & 0           & 0                                                               & 7                                                                  & 3003                                                         & 41047                                                 & 71001                                                   & 36.6         \\
+Elevator1 & 0        & 26           & 0           & 0                                                               & 8                                                                  & 7006                                                         & 31063                                                 & 53040                                                   & 36.9         \\
+Elevator2 & 0        & 25            & 0           & 0                                                               & 11                                                                  & 5007                                                         & 38045                                                 & 78996                                                   & 32.5         \\
+Average   & 0     & 25.67         & 0        & 0                                                               & 8.67                                                               & 5005                                                         & 36718                                                 &  67679                                                  & 35.3          \\ \bottomrule
 \end{tabular}
 \end{table}
 
@@ -244,6 +278,7 @@ Average   & 10     & 29         & 16.67        & 2.67                           
 
 O objetivo desta experiência consiste em comparar os resultados das várias estratégias implementadas com as mesmas condições para todos os elevadores, mas com velocidade mais rápida comparada com a experiência anterior.
 
+\newpage
 \subsubsection{Resultados}
 
 Utilizando a primeira estratégia,
@@ -273,6 +308,38 @@ Elevator0 & 3        & 24            & 10           & 1                         
 Elevator1 & 7        & 24            & 6           & 2                                                               & 9                                                                  & 1528                                                         & 9952                                                 & 93882                                                   & 9.59         \\
 Elevator2 & 5        & 25            & 7           & 1                                                               & 11                                                                  & 1576                                                         & 13751                                                 & 90953                                                   & 13.13         \\
 Average   & 5     & 24.33         & 7.67        & 1.33                                                               & 8.67                                                               & 2304                                                         & 10209                                                 & 74351                                                   &  12.69         \\ \bottomrule
+\end{tabular}
+\end{table}
+
+Utilizando a terceira estratégia,
+
+\begin{table}[h]
+\centering
+\hspace*{-3.2cm}
+\begin{tabular}{@{}llllllllll@{}}
+\toprule
+Agent     & \begin{tabular}[c]{@{}l@{}}CFPs\\ sent \end{tabular} & \begin{tabular}[c]{@{}l@{}}Proposes\\ sent\end{tabular} & \begin{tabular}[c]{@{}l@{}}Refuses\\ sent\end{tabular} & \begin{tabular}[c]{@{}l@{}}Accept\\ proposals sent\end{tabular} & \begin{tabular}[c]{@{}l@{}}Accept proposals\\ received\end{tabular} & \begin{tabular}[c]{@{}l@{}}Max wait\\ time (ms)\end{tabular} & \begin{tabular}[c]{@{}l@{}}Uptime\\ (ms)\end{tabular} & \begin{tabular}[c]{@{}l@{}}Downtime\\ (ms)\end{tabular} &\begin{tabular}[c]{@{}l@{}}Use \\rate (\%) \end{tabular} \\ \midrule
+Elevator0 & 0        & 24            & 0           & 0                                                               & 11                                                                  & 5933                                                         & 19591                                                 & 95421                                                   & 17.03         \\
+Elevator1 & 0        & 24           & 0           & 0                                                               & 4                                                                  & 4108                                                         & 6923                                                 & 38956                                                   & 15.09         \\
+Elevator2 & 0        & 24            & 0           & 0                                                               & 9                                                                  & 2235                                                         & 13665                                                 & 70524                                                   & 16.23         \\
+Average   & 0     & 24         & 0        & 0                                                               & 8                                                               & 5005                                                         & 13393                                                 &  68300                                                  & 16.12          \\ \bottomrule
+\end{tabular}
+\end{table}
+
+\newpage
+
+Utilizando a quarta estratégia,
+
+\begin{table}[h]
+\centering
+\hspace*{-3.2cm}
+\begin{tabular}{@{}llllllllll@{}}
+\toprule
+Agent     & \begin{tabular}[c]{@{}l@{}}CFPs\\ sent \end{tabular} & \begin{tabular}[c]{@{}l@{}}Proposes\\ sent\end{tabular} & \begin{tabular}[c]{@{}l@{}}Refuses\\ sent\end{tabular} & \begin{tabular}[c]{@{}l@{}}Accept\\ proposals sent\end{tabular} & \begin{tabular}[c]{@{}l@{}}Accept proposals\\ received\end{tabular} & \begin{tabular}[c]{@{}l@{}}Max wait\\ time (ms)\end{tabular} & \begin{tabular}[c]{@{}l@{}}Uptime\\ (ms)\end{tabular} & \begin{tabular}[c]{@{}l@{}}Downtime\\ (ms)\end{tabular} &\begin{tabular}[c]{@{}l@{}}Use \\rate (\%) \end{tabular} \\ \midrule
+Elevator0 & 0        & 26            & 0           & 0                                                               & 5                                                                  & 1308                                                         & 7362                                                 & 114243                                                   & 6.05         \\
+Elevator1 & 0        & 26           & 0           & 0                                                               & 4                                                                  & 1096                                                         & 2887                                                 & 49565                                                   & 5.5         \\
+Elevator2 & 0        & 26            & 0           & 0                                                               & 17                                                                  & 3125                                                         & 24272                                                 & 97331                                                   & 32.5         \\
+Average   & 0     & 26         & 0        & 0                                                               & 19.96                                                               & 5005                                                         & 11508                                                 &  87046                                                  & 10.5         \\ \bottomrule
 \end{tabular}
 \end{table}
 
@@ -325,6 +392,38 @@ Average   & 8     & 26         & 14        & 1.67                               
 \end{tabular}
 \end{table}
 
+\newpage
+
+Utilizando a terceira estratégia,
+
+\begin{table}[h]
+\centering
+\hspace*{-3.2cm}
+\begin{tabular}{@{}llllllllll@{}}
+\toprule
+Agent     & \begin{tabular}[c]{@{}l@{}}CFPs\\ sent \end{tabular} & \begin{tabular}[c]{@{}l@{}}Proposes\\ sent\end{tabular} & \begin{tabular}[c]{@{}l@{}}Refuses\\ sent\end{tabular} & \begin{tabular}[c]{@{}l@{}}Accept\\ proposals sent\end{tabular} & \begin{tabular}[c]{@{}l@{}}Accept proposals\\ received\end{tabular} & \begin{tabular}[c]{@{}l@{}}Max wait\\ time (ms)\end{tabular} & \begin{tabular}[c]{@{}l@{}}Uptime\\ (ms)\end{tabular} & \begin{tabular}[c]{@{}l@{}}Downtime\\ (ms)\end{tabular} &\begin{tabular}[c]{@{}l@{}}Use \\rate (\%) \end{tabular} \\ \midrule
+Elevator0 & 0        & 22            & 0           & 0                                                               & 7                                                                  & 3003                                                         & 14062                                                 & 88279                                                   & 13.74         \\
+Elevator1 & 0        & 22           & 0           & 0                                                               & 9                                                                  & 5006                                                         & 24159                                                 & 78182                                                   & 23.61         \\
+Elevator2 & 0        & 22            & 0           & 0                                                               & 6                                                                  & 2019                                                         & 12104                                                 & 36987                                                   & 24.66         \\
+Average   & 0     & 22         & 0        & 0                                                               & 7.33                                                               & 5005                                                         & 16775                                                 &  67816                                                  & 20.67         \\ \bottomrule
+\end{tabular}
+\end{table}
+
+Utilizando a quarta estratégia,
+
+\begin{table}[h]
+\centering
+\hspace*{-3.2cm}
+\begin{tabular}{@{}llllllllll@{}}
+\toprule
+Agent     & \begin{tabular}[c]{@{}l@{}}CFPs\\ sent \end{tabular} & \begin{tabular}[c]{@{}l@{}}Proposes\\ sent\end{tabular} & \begin{tabular}[c]{@{}l@{}}Refuses\\ sent\end{tabular} & \begin{tabular}[c]{@{}l@{}}Accept\\ proposals sent\end{tabular} & \begin{tabular}[c]{@{}l@{}}Accept proposals\\ received\end{tabular} & \begin{tabular}[c]{@{}l@{}}Max wait\\ time (ms)\end{tabular} & \begin{tabular}[c]{@{}l@{}}Uptime\\ (ms)\end{tabular} & \begin{tabular}[c]{@{}l@{}}Downtime\\ (ms)\end{tabular} &\begin{tabular}[c]{@{}l@{}}Use \\rate (\%) \end{tabular} \\ \midrule
+Elevator0 & 0        & 24            & 0           & 0                                                               & 4                                                                  & 8011                                                         & 13015                                                 & 81114                                                   & 13.83         \\
+Elevator1 & 0        & 24           & 0           & 0                                                               & 14                                                                  & 6640                                                         & 36735                                                 & 78388                                                   & 31.91         \\
+Elevator2 & 0        & 24            & 0           & 0                                                               & 16                                                                  & 2005                                                         & 15058                                                 & 100063                                                   & 32.5         \\
+Average   & 0     & 24         & 0        & 0                                                               & 13.1                                                               & 5552                                                         & 21603                                                 &  86522                                                  & 19.6         \\ \bottomrule
+\end{tabular}
+\end{table}
+
 \subsection{Experiência 4}
 
 \subsubsection{Condições iniciais}
@@ -359,6 +458,8 @@ Average   & 36     & 72.67         & 64.33        & 7                           
 \end{tabular}
 \end{table}
 
+\newpage
+
 Utilizando a segunda estratégia,
 
 \begin{table}[h]
@@ -371,6 +472,36 @@ Elevator0 & 33        & 72            & 52           & 7                        
 Elevator1 & 32        & 73            & 52           & 7                                                               & 28                                                                  & 14059                                                         & 90101                                                 & 31088                                                   & 74.35         \\
 Elevator2 & 27        & 73            & 57           & 5                                                               & 29                                                                  & 13083                                                         & 68083                                                 & 52065                                                   & 56.67         \\
 Average   & 30.67     & 72.67         & 53.67        & 6.33                                                            & 28                                                               & 15399                                                         & 78428                                                 & 42373                                                   &  64.9         \\ \bottomrule
+\end{tabular}
+\end{table}
+
+Utilizando a terceira estratégia,
+
+\begin{table}[h]
+\centering
+\hspace*{-3.2cm}
+\begin{tabular}{@{}llllllllll@{}}
+\toprule
+Agent     & \begin{tabular}[c]{@{}l@{}}CFPs\\ sent \end{tabular} & \begin{tabular}[c]{@{}l@{}}Proposes\\ sent\end{tabular} & \begin{tabular}[c]{@{}l@{}}Refuses\\ sent\end{tabular} & \begin{tabular}[c]{@{}l@{}}Accept\\ proposals sent\end{tabular} & \begin{tabular}[c]{@{}l@{}}Accept proposals\\ received\end{tabular} & \begin{tabular}[c]{@{}l@{}}Max wait\\ time (ms)\end{tabular} & \begin{tabular}[c]{@{}l@{}}Uptime\\ (ms)\end{tabular} & \begin{tabular}[c]{@{}l@{}}Downtime\\ (ms)\end{tabular} &\begin{tabular}[c]{@{}l@{}}Use \\rate (\%) \end{tabular} \\ \midrule
+Elevator0 & 0        & 65            & 0           & 0                                                               & 25                                                                  & 45094                                                         & 80108                                                 & 31014                                                   & 72.1         \\
+Elevator1 & 0        & 65           & 0           & 0                                                               & 26                                                                  & 47102                                                         & 78090                                                 & 43089                                                   & 64.4        \\
+Elevator2 & 0        & 65            & 0           & 0                                                               & 14                                                                  & 31097                                                         & 94102                                                 & 26047                                                   & 78.3         \\
+Average   & 0     & 65         & 0        & 0                                                               & 21.67                                                               & 41098                                                         & 84100                                                 &  33383                                                  & 71.6         \\ \bottomrule
+\end{tabular}
+\end{table}
+
+Utilizando a quarta estratégia,
+
+\begin{table}[h]
+\centering
+\hspace*{-3.2cm}
+\begin{tabular}{@{}llllllllll@{}}
+\toprule
+Agent     & \begin{tabular}[c]{@{}l@{}}CFPs\\ sent \end{tabular} & \begin{tabular}[c]{@{}l@{}}Proposes\\ sent\end{tabular} & \begin{tabular}[c]{@{}l@{}}Refuses\\ sent\end{tabular} & \begin{tabular}[c]{@{}l@{}}Accept\\ proposals sent\end{tabular} & \begin{tabular}[c]{@{}l@{}}Accept proposals\\ received\end{tabular} & \begin{tabular}[c]{@{}l@{}}Max wait\\ time (ms)\end{tabular} & \begin{tabular}[c]{@{}l@{}}Uptime\\ (ms)\end{tabular} & \begin{tabular}[c]{@{}l@{}}Downtime\\ (ms)\end{tabular} &\begin{tabular}[c]{@{}l@{}}Use \\rate (\%) \end{tabular} \\ \midrule
+Elevator0 & 0        & 65            & 0           & 0                                                               & 23                                                                  & 54091                                                         & 79087                                                 & 41070                                                   & 65.82         \\
+Elevator1 & 0        & 65           & 0           & 0                                                               & 26                                                                  & 9092                                                         & 86101                                                 & 34088                                                   & 71.64         \\
+Elevator2 & 0        & 65            & 0           & 0                                                               & 16                                                                  & 21026                                                         & 82094                                                 & 37999                                                   & 68.36         \\
+Average   & 0     & 65         & 0        & 0                                                               & 21.67                                                               & 28070                                                         & 82427                                                 &  37719                                                  &  68.61        \\ \bottomrule
 \end{tabular}
 \end{table}
 
