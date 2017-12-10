@@ -2,6 +2,7 @@ import jade.core.Agent;
 import jade.core.behaviours.Behaviour;
 import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
+import jade.domain.FIPAAgentManagement.SearchConstraints;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
 
@@ -15,7 +16,7 @@ public class MyAgent extends Agent {
 
     @Override
     public void doDelete() {
-        super.doDelete();;
+        super.doDelete();
         display("State change request to 'deleted' performed.");
     }
 
@@ -52,5 +53,15 @@ public class MyAgent extends Agent {
 
     protected void displayError(final String str) {
         Console.displayError(this.getAID().getLocalName() + ": " + str);
+    }
+
+    protected DFAgentDescription[] searchOnDFService(String agentType) throws FIPAException {
+        DFAgentDescription dfAgentDescription = new DFAgentDescription();
+        ServiceDescription serviceDescription = new ServiceDescription();
+        serviceDescription.setType(agentType);
+        dfAgentDescription.addServices(serviceDescription);
+        SearchConstraints searchConstraints = new SearchConstraints();
+        searchConstraints.setMaxResults((long) -1);
+        return DFService.search(this, dfAgentDescription, searchConstraints);
     }
 }

@@ -1,5 +1,6 @@
-import jade.core.AID;
 import jade.core.behaviours.CyclicBehaviour;
+import jade.domain.FIPAAgentManagement.DFAgentDescription;
+import jade.domain.FIPAException;
 import jade.domain.FIPANames;
 import jade.lang.acl.ACLMessage;
 import jade.proto.ContractNetInitiator;
@@ -17,10 +18,10 @@ public class Building extends MyAgent {
     public static final String agentType = "Building";
     private final BuildingProperties properties;
     private final ArrayList<ElevatorProperties> elevatorsProperties;
-    private final ArrayList<AID> elevators;
     private final long reqGenInterval;
     private final boolean randNumRequestsPerInterval;
     private final int numRequestsPerInterval;
+    private int numResponders;
 
     public Building(final BuildingProperties properties, final long reqGenInterval, final ArrayList<ElevatorProperties> elevatorsProperties) {
         this(properties, reqGenInterval, true, 0, elevatorsProperties);
@@ -38,10 +39,10 @@ public class Building extends MyAgent {
             throw new IllegalArgumentException("Invalid number of requests per interval: " + numRequestsPerInterval);
         this.properties = properties;
         this.elevatorsProperties = elevatorsProperties;
-        this.elevators = new ArrayList<>();
         this.reqGenInterval = reqGenInterval;
         this.randNumRequestsPerInterval = randNumRequestsPerInterval;
         this.numRequestsPerInterval = numRequestsPerInterval;
+        this.numResponders = 0;
     }
 
     @Override
@@ -54,13 +55,12 @@ public class Building extends MyAgent {
 
     private void generateElevatorsAgents() {
         final AgentContainer containerController = this.getContainerController();
-        final int numElevators = properties.getNumElevators();
+        final int numElevators = elevatorsProperties.size();
         for (int i = 0; i < numElevators; i++)
             try {
                 final Elevator elevator = new Elevator(elevatorsProperties.get(i), properties);
                 final AgentController ac = containerController.acceptNewAgent(Elevator.agentType + i, elevator);
                 ac.start();
-                elevators.add(elevator.getAID());
             } catch (StaleProxyException e) {
                 e.printStackTrace();
             }
@@ -74,9 +74,8 @@ public class Building extends MyAgent {
             protected void handleAllResponses(Vector responses, Vector acceptances) {
                 super.handleAllResponses(responses, acceptances);
 
-                final int numResponses = properties.getNumElevators();
-                if (responses.size() < numResponses)
-                    display("Timeout expired: missing " + (numResponses - responses.size()) + " responses from " + numResponses + " expected");
+                if (responses.size() < numResponders)
+                    display("Timeout expired: missing " + (numResponders - responses.size()) + " responses from " + numResponders + " expected");
 
                 // Evaluate proposals.
                 long bestProposal = Long.MAX_VALUE;
@@ -114,9 +113,14 @@ public class Building extends MyAgent {
         @Override
         public void action() {
             if (endBlock < System.currentTimeMillis()) {
-                final int numRequests = randNumRequestsPerInterval ? MyRandom.randomInt(1, 3 * properties.getNumElevators()) : numRequestsPerInterval;
+                final int numRequests = randNumRequestsPerInterval ? MyRandom.randomInt(1, 3 * elevatorsProperties.size()) : numRequestsPerInterval;
                 final ArrayList<Request> requests = generateNRequests(numRequests);
-                sendRequests(requests);
+                try {
+                    sendRequests(requests);
+                } catch (FIPAException e) {
+                    e.printStackTrace();
+                    System.exit(-1);
+                }
                 endBlock = System.currentTimeMillis() + reqGenInterval;
                 blockBehaviour(reqGenInterval, this);
             } else
@@ -136,15 +140,17 @@ public class Building extends MyAgent {
             return requests;
         }
 
-        private void sendRequests(final ArrayList<Request> requests) {
+        private void sendRequests(final ArrayList<Request> requests) throws FIPAException {
             for (final Request request : requests) {
                 final MessageContent messageContent = new MessageContent(request.getInitialFloor(), request.getDestinationFloor(), Long.MAX_VALUE);
                 final ACLMessage msg = new ACLMessage(ACLMessage.CFP);
                 msg.setProtocol(FIPANames.InteractionProtocol.FIPA_CONTRACT_NET);
                 msg.setReplyByDate(new Date(System.currentTimeMillis() + 2 * Timer.ONE_SECOND));
                 msg.setSender(myAgent.getAID());
-                for (AID elevatorAID : elevators)
-                    msg.addReceiver(elevatorAID);
+                DFAgentDescription[] dfAgentDescriptions = searchOnDFService(Elevator.agentType);
+                numResponders = dfAgentDescriptions.length;
+                for (DFAgentDescription dfAgentDescription : dfAgentDescriptions)
+                    msg.addReceiver(dfAgentDescription.getName());
                 msg.setContent(messageContent.toString());
                 setupContractNetInitiatorBehaviour(msg);
             }

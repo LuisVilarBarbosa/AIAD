@@ -1,8 +1,10 @@
 import jade.core.AID;
 import jade.core.behaviours.CyclicBehaviour;
+import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.FailureException;
 import jade.domain.FIPAAgentManagement.NotUnderstoodException;
 import jade.domain.FIPAAgentManagement.RefuseException;
+import jade.domain.FIPAException;
 import jade.domain.FIPANames;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
@@ -23,6 +25,7 @@ public class Elevator extends MyAgent {
     private final ArrayList<Request> internalRequests;
     private final ElevatorStatistics statistics;
     private final long startupTime;
+    private int numResponders;
 
     public Elevator(final ElevatorProperties properties, final BuildingProperties buildingProperties) {
         super();
@@ -32,6 +35,7 @@ public class Elevator extends MyAgent {
         this.internalRequests = new ArrayList<>();
         this.statistics = new ElevatorStatistics();
         this.startupTime = System.currentTimeMillis();
+        this.numResponders = 0;
     }
 
     @Override
@@ -265,20 +269,26 @@ public class Elevator extends MyAgent {
                 blockBehaviour(blockEnd - currentMillis, this);
                 return;
             }
-            proposeRequestToOthers();
+            try {
+                proposeRequestToOthers();
+            } catch (FIPAException e) {
+                e.printStackTrace();
+                System.exit(-1);
+            }
             blockEnd = System.currentTimeMillis() + intervalBtwProposals;
             blockBehaviour(intervalBtwProposals, this);
         }
 
-        private void proposeRequestToOthers() {
+        private void proposeRequestToOthers() throws FIPAException {
             if (!internalRequests.isEmpty()) {
                 final ACLMessage aclMessage = new ACLMessage(ACLMessage.CFP);
                 aclMessage.setProtocol(FIPANames.InteractionProtocol.FIPA_CONTRACT_NET);
                 aclMessage.setReplyByDate(new Date(System.currentTimeMillis() + intervalBtwProposals));
                 aclMessage.setSender(myAgent.getAID());
-                for (int i = 0; i < buildingProperties.getNumElevators(); i++)
-                    if (!myAgent.getAID().getLocalName().equals(Elevator.agentType + i))
-                        aclMessage.addReceiver(myAgent.getAID(Elevator.agentType + i));
+                DFAgentDescription[] dfAgentDescriptions = searchOnDFService(Elevator.agentType);
+                numResponders = dfAgentDescriptions.length;
+                for (DFAgentDescription dfAgentDescription : dfAgentDescriptions)
+                    aclMessage.addReceiver(dfAgentDescription.getName());
 
                 final long currentTime = System.currentTimeMillis();
                 long largestWaitTime = 0;
@@ -337,10 +347,9 @@ public class Elevator extends MyAgent {
             protected void handleAllResponses(Vector responses, Vector acceptances) {
                 super.handleAllResponses(responses, acceptances);
 
-                final int numResponses = buildingProperties.getNumElevators() - 1;
-                if (responses.size() < numResponses) {
+                if (responses.size() < numResponders) {
                     // Some responder didn't reply within the specified timeout
-                    display("Timeout expired: missing " + (numResponses - responses.size()) + " responses from " + numResponses + " expected");
+                    display("Timeout expired: missing " + (numResponders - responses.size()) + " responses from " + numResponders + " expected");
                 }
 
                 // Evaluate proposals.
