@@ -1,4 +1,4 @@
-﻿\documentclass[a4paper]{article}
+\documentclass[a4paper]{article}
 
 %use the english line for english reports
 %usepackage[english]{babel}
@@ -117,7 +117,7 @@ Caso a negociação entre elevadores seja permitida, tenta negociar com outros e
 
 É feita a verificação da existência de algum pedido para o piso atual do elevador, e se ainda não foi atendido. Caso isto se verifique, o elevador para e é gerado um novo peso que não exceda a capacidade do mesmo. Este peso pretende simular a entrada de uma pessoa. Existem casos em que é gerado o valor 0 de forma a aproximar a uma situação real, pois por vezes não é possível satisfazer o pedido pois o elevador já se encontra lotado. Durante o tempo de entrada de pessoas, só são atendidos pedidos com piso inicial nesse andar.
 
-A forma de o elevador decidir para que andar se deve dirigir tem por base o andar mais próximo do atual. É verificado todo o conjunto de pedidos do elevador, isto é, caso já tenha sido um pedido atendido, verifica-se qual é o andar de destino mais próximo. Caso seja um pedido externi, verifica-se qual é o andar de partida mais próximo.
+A forma de o elevador decidir para que andar se deve dirigir tem por base o andar mais próximo do atual. É verificado todo o conjunto de pedidos do elevador, isto é, caso já tenha sido um pedido atendido, verifica-se qual é o andar de destino mais próximo. Caso seja um pedido não atendido, verifica-se qual é o andar inicial mais próximo.
 
 O algoritmo de decisão tenta, em todos os andares, otimizar a distância ao próximo andar. Desta forma, garantimos que não ande um grande número de andares sem parar quando era mais eficiente ter parado a meio para atender mais pedidos.
 
@@ -141,12 +141,12 @@ Desta forma, a \textbf{terceira} estratégia é idêntica à primeira e a \textb
 
 O protocolo de interação utilizado na decisão para alocação de pedidos aos elevadores é o \textbf{FIPA CONTRACT NET}.
 
-A cada período de geração de pedidos do \textit{Building} (reqGenInterval), para cada um destes é gerada uma \textit{ACLMessage} do tipo \textit{CFP}, com o protocolo \textbf{FIPA\_CONTRACT\_NET}, em que os os seus recetores são todos os elevadores do edifício. Em seguida, cada elevador após receber o \textbf{CFP}, calcula o tempo que vai demorar até ao andar inicial do pedido. Se este for menor do que o tempo que vem no pedido, o elevador envia uma \textit{ACLMessage} do tipo \textbf{PROPOSE}. Caso contrário, o agente envia uma \textit{ACLMessage} do tipo \textbf{REFUSE}. Quando o edifício recebe as propostas (\textit{ACLMessage} do tipo \textbf{PROPOSE}), analisa a melhor com base nos tempos e envia uma \textit{ACLMessage} do tipo \textbf{REJECT\_PROPOSAL} para todas, exceto para a melhor proposta, em que envia uma \textit{ACLMessage} do tipo \textbf{ACCEPT\_PROPOSAL}, ficando assim alocado o pedido a este elevador.
+A cada período de geração de pedidos do \textit{Building} (reqGenInterval), para cada um destes é gerada uma \textit{ACLMessage} do tipo \textit{CFP}, com o protocolo \textbf{FIPA\_CONTRACT\_NET}, em que os os seus recetores são todos os elevadores do edifício. Em seguida, cada elevador após receber o \textbf{CFP}, calcula o tempo que vai demorar até levar o utilizador ao seu piso de destino. Se este for menor ou igual ao tempo que vem no pedido, o elevador envia uma \textit{ACLMessage} do tipo \textbf{PROPOSE}. Caso contrário, o agente envia uma \textit{ACLMessage} do tipo \textbf{REFUSE}. Quando o edifício recebe as propostas (\textit{ACLMessage} do tipo \textbf{PROPOSE}), analisa a melhor com base nos tempos e envia uma \textit{ACLMessage} do tipo \textbf{REJECT\_PROPOSAL} para todas, exceto para a melhor proposta, em que envia uma \textit{ACLMessage} do tipo \textbf{ACCEPT\_PROPOSAL}, ficando assim alocado o pedido a este elevador.
 
 Também um elevador pode negociar o seu pior pedido com os restantes elevadores: assim, cria uma mensagem do tipo \textbf{CFP} com a informação do seu pior pedido e envia para os restantes elevadores. A gestão da receção deste pedido é feita de forma igual à da receção de pedidos do \textit{Building}. Caso não consiga atribuir a outro elevador, o pedido mantém-se alocado ao próprio. 
 
 \begin{center}
-	\includegraphics[scale=0.59]{fipa.png}
+	\includegraphics[scale=1.2]{fipa.png}
 \end{center}
 
 \newpage
@@ -215,7 +215,7 @@ O objetivo desta experiência consiste em comparar os resultados das várias est
 
 \subsubsection{Resultados}
 
-Utilizando a primeira estratégia,
+Utilizando a primeira estratégia (sem teclado e com negociação),
 
 \begin{table}[h]
 \centering
@@ -232,7 +232,7 @@ Average   & 11.66     & 29         & 19.3        & 3                            
 
 \newpage
 
-Utilizando a segunda estratégia,
+Utilizando a segunda estratégia (com teclado e com negociação),
 
 \begin{table}[h]
 \centering
@@ -247,7 +247,7 @@ Average   & 7.66     & 27.33         & 13        & 2.33                         
 \end{tabular}
 \end{table}
 
-Utilizando a terceira estratégia,
+Utilizando a terceira estratégia (sem teclado e sem negociação),
 
 \begin{table}[h]
 \centering
@@ -262,7 +262,7 @@ Average   & 0     & 25.33         & 0        & 0                                
 \end{tabular}
 \end{table}
 
-Utilizando a quarta estratégia,
+Utilizando a quarta estratégia (sem teclado e com negociação),
 
 \begin{table}[h]
 \centering
@@ -297,7 +297,7 @@ O objetivo desta experiência consiste em comparar os resultados das várias est
 \newpage
 \subsubsection{Resultados}
 
-Utilizando a primeira estratégia,
+Utilizando a primeira estratégia (sem teclado e com negociação),
 
 \begin{table}[h]
 \centering
@@ -312,7 +312,7 @@ Average   & 6     & 27         & 10.33        & 1.67                            
 \end{tabular}
 \end{table}
 
-Utilizando a segunda estratégia,
+Utilizando a segunda estratégia (com teclado e com negociação),
 
 \begin{table}[h]
 \centering
@@ -327,7 +327,7 @@ Average   & 3     & 25.67         & 5.67        & 0.33                          
 \end{tabular}
 \end{table}
 
-Utilizando a terceira estratégia,
+Utilizando a terceira estratégia (sem teclado e sem negociação),
 
 \begin{table}[h]
 \centering
@@ -344,7 +344,7 @@ Average   & 0     & 24.67         & 0        & 0                                
 
 \newpage
 
-Utilizando a quarta estratégia,
+Utilizando a quarta estratégia (sem teclado e com negociação),
 
 \begin{table}[h]
 \centering
@@ -378,7 +378,7 @@ O objetivo desta experiência consiste em comparar os resultados das várias est
 
 \subsubsection{Resultados}
 
-Utilizando a primeira estratégia,
+Utilizando a primeira estratégia (sem teclado e com negociação),
 
 \begin{table}[h]
 \centering
@@ -393,7 +393,7 @@ Average   & 9.33     & 30.33         & 14.33        & 14.33                     
 \end{tabular}
 \end{table}
 
-Utilizando a segunda estratégia,
+Utilizando a segunda estratégia (com teclado e com negociação),
 
 \begin{table}[h]
 \centering
@@ -410,7 +410,7 @@ Average   & 6.67     & 26.33         & 11        & 1.67                         
 
 \newpage
 
-Utilizando a terceira estratégia,
+Utilizando a terceira estratégia (sem teclado e sem negociação),
 
 \begin{table}[h]
 \centering
@@ -425,7 +425,7 @@ Average   & 0     & 24         & 0        & 0                                   
 \end{tabular}
 \end{table}
 
-Utilizando a quarta estratégia,
+Utilizando a quarta estratégia (sem teclado e com negociação),
 
 \begin{table}[h]
 \centering
@@ -459,7 +459,7 @@ O objetivo desta experiência consiste em comparar os resultados das várias est
 
 \subsubsection{Resultados}
 
-Utilizando a primeira estratégia,
+Utilizando a primeira estratégia (sem teclado e com negociação),
 
 \begin{table}[h]
 \centering
@@ -476,7 +476,7 @@ Average   & 47.67     & 97.33         & 72.67        & 19.33                    
 
 \newpage
 
-Utilizando a segunda estratégia,
+Utilizando a segunda estratégia (com teclado e com negociação),
 
 \begin{table}[h]
 \centering
@@ -491,7 +491,7 @@ Average   & 38.33     & 70.67         & 61        & 12.33                       
 \end{tabular}
 \end{table}
 
-Utilizando a terceira estratégia,
+Utilizando a terceira estratégia (sem teclado e sem negociação),
 
 \begin{table}[h]
 \centering
@@ -506,7 +506,7 @@ Average   & 0     & 63.33         & 0        & 0                                
 \end{tabular}
 \end{table}
 
-Utilizando a quarta estratégia,
+Utilizando a quarta estratégia  (sem teclado e com negociação),
 
 \begin{table}[h]
 \centering
@@ -593,6 +593,8 @@ Documentação do JADE
 
 Código fonte do JADE
 
+https://pt.slideshare.net/AryanRathore4/all-about-agents-jade
+
 \subsection{Software} 
 
 JADE (http://jade.tilab.com/)
@@ -619,6 +621,8 @@ Para conseguir correr o projeto, deve:
 3. Editar o ficheiro default.properties consoante o que deseja visualizar na interface;
 
 4. Correr, utilizando a classe MyBoot como \textit{main}.
+
+Também pode utilizar o script "CompileAndRunMyBootScript.ps1".
 
 \newpage
 
