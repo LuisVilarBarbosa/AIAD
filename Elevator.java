@@ -1,15 +1,16 @@
 import jade.core.AID;
 import jade.core.behaviours.CyclicBehaviour;
+import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.FailureException;
 import jade.domain.FIPAAgentManagement.NotUnderstoodException;
 import jade.domain.FIPAAgentManagement.RefuseException;
+import jade.domain.FIPAException;
 import jade.domain.FIPANames;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.proto.ContractNetInitiator;
 import jade.proto.ContractNetResponder;
 
-import javax.management.timer.Timer;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
@@ -23,6 +24,7 @@ public class Elevator extends MyAgent {
     private final ArrayList<Request> internalRequests;
     private final ElevatorStatistics statistics;
     private final long startupTime;
+    private int numResponders;
 
     public Elevator(final ElevatorProperties properties, final BuildingProperties buildingProperties) {
         super();
@@ -32,6 +34,7 @@ public class Elevator extends MyAgent {
         this.internalRequests = new ArrayList<>();
         this.statistics = new ElevatorStatistics();
         this.startupTime = System.currentTimeMillis();
+        this.numResponders = 0;
     }
 
     @Override
@@ -255,7 +258,6 @@ public class Elevator extends MyAgent {
     }
 
     private class ContractNetActivatorBehaviour extends CyclicBehaviour {
-        private final long intervalBtwProposals = 2 * Timer.ONE_SECOND;
         private long blockEnd = System.currentTimeMillis();
 
         @Override
@@ -265,20 +267,26 @@ public class Elevator extends MyAgent {
                 blockBehaviour(blockEnd - currentMillis, this);
                 return;
             }
-            proposeRequestToOthers();
-            blockEnd = System.currentTimeMillis() + intervalBtwProposals;
-            blockBehaviour(intervalBtwProposals, this);
+            try {
+                proposeRequestToOthers();
+            } catch (FIPAException e) {
+                e.printStackTrace();
+                System.exit(-1);
+            }
+            blockEnd = System.currentTimeMillis() + timeout;
+            blockBehaviour(timeout, this);
         }
 
-        private void proposeRequestToOthers() {
+        private void proposeRequestToOthers() throws FIPAException {
             if (!internalRequests.isEmpty()) {
                 final ACLMessage aclMessage = new ACLMessage(ACLMessage.CFP);
                 aclMessage.setProtocol(FIPANames.InteractionProtocol.FIPA_CONTRACT_NET);
-                aclMessage.setReplyByDate(new Date(System.currentTimeMillis() + intervalBtwProposals));
+                aclMessage.setReplyByDate(new Date(System.currentTimeMillis() + timeout));
                 aclMessage.setSender(myAgent.getAID());
-                for (int i = 0; i < buildingProperties.getNumElevators(); i++)
-                    if (!myAgent.getAID().getLocalName().equals(Elevator.agentType + i))
-                        aclMessage.addReceiver(myAgent.getAID(Elevator.agentType + i));
+                DFAgentDescription[] dfAgentDescriptions = searchOnDFService(Elevator.agentType);
+                numResponders = dfAgentDescriptions.length;
+                for (DFAgentDescription dfAgentDescription : dfAgentDescriptions)
+                    aclMessage.addReceiver(dfAgentDescription.getName());
 
                 final long currentTime = System.currentTimeMillis();
                 long largestWaitTime = 0;
@@ -309,16 +317,19 @@ public class Elevator extends MyAgent {
     private void setupContractNetInitiatorBehaviour(ACLMessage message) {
         addBehaviour(new ContractNetInitiator(this, message) {
 
+            @Override
             protected void handlePropose(ACLMessage propose, Vector v) {
                 super.handlePropose(propose, v);
                 display("Agent " + propose.getSender().getLocalName() + " proposed " + propose.getContent());
             }
 
+            @Override
             protected void handleRefuse(ACLMessage refuse) {
                 super.handleRefuse(refuse);
                 display("Agent " + refuse.getSender().getLocalName() + " refused");
             }
 
+            @Override
             protected void handleFailure(ACLMessage failure) {
                 super.handleFailure(failure);
                 if (failure.getSender().equals(myAgent.getAMS())) {
@@ -330,13 +341,13 @@ public class Elevator extends MyAgent {
             }
 
             @SuppressWarnings("unchecked")
+            @Override
             protected void handleAllResponses(Vector responses, Vector acceptances) {
                 super.handleAllResponses(responses, acceptances);
 
-                final int numResponses = buildingProperties.getNumElevators() - 1;
-                if (responses.size() < numResponses) {
+                if (responses.size() < numResponders) {
                     // Some responder didn't reply within the specified timeout
-                    display("Timeout expired: missing " + (numResponses - responses.size()) + " responses from " + numResponses + " expected");
+                    display("Timeout expired: missing " + (numResponders - responses.size()) + " responses from " + numResponders + " expected");
                 }
 
                 // Evaluate proposals.
@@ -363,11 +374,10 @@ public class Elevator extends MyAgent {
                 // Accept the proposal of the best proposer
                 if (accept != null) {
                     for (int i = 0; i < internalRequests.size(); ) {
-                        Request request = internalRequests.get(i);
+                        final Request request = internalRequests.get(i);
                         if (request.getInitialFloor() == acceptedRequest.getInitialFloor() && request.getDestinationFloor() == acceptedRequest.getDestinationFloor() && !request.isAttended()) {
                             display("Accepting proposal " + bestProposal + " from responder " + bestProposer.getLocalName());
                             accept.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
-                            internalRequests.remove(i);
                             statistics.setAcceptProposalsSent(statistics.getAcceptProposalsSent() + 1);
                             break;
                         } else
@@ -375,12 +385,31 @@ public class Elevator extends MyAgent {
                     }
                 }
             }
+
+            @Override
+            protected void handleInform(ACLMessage inform) {
+                super.handleInform(inform);
+                final MessageContent messageContent = new MessageContent(inform.getContent());
+                for (int i = 0; i < internalRequests.size(); i++) {
+                    final Request request = internalRequests.get(i);
+                    if (request.getInitialFloor() == messageContent.getInitialFloor() && request.getDestinationFloor() == messageContent.getDestinationFloor()) {
+                        display(inform.getSender().getLocalName() + " informed that received the accepted proposal message");
+                        internalRequests.remove(i);
+                        break;
+                    }
+                }
+            }
         });
     }
 
     private void setupContractNetResponderBehaviour() {
-        MessageTemplate template = MessageTemplate.and(MessageTemplate.MatchPerformative(ACLMessage.CFP), MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_CONTRACT_NET));
+        final MessageTemplate template = MessageTemplate.and(
+                MessageTemplate.MatchPerformative(ACLMessage.CFP),
+                MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_CONTRACT_NET)
+        );
         addBehaviour(new ContractNetResponder(this, template) {
+
+            @Override
             protected ACLMessage handleCfp(ACLMessage cfp) throws NotUnderstoodException, FailureException, RefuseException {
                 super.handleCfp(cfp);
 
@@ -388,14 +417,13 @@ public class Elevator extends MyAgent {
                     return null;
 
                 display(cfp.getSender().getLocalName() + " sent action " + cfp.getContent());
-                MessageContent proposedRequest = new MessageContent(cfp.getContent());
-                ACLMessage propose = cfp.createReply();
-                propose.setProtocol(FIPANames.InteractionProtocol.FIPA_CONTRACT_NET);
+                final MessageContent proposedRequest = new MessageContent(cfp.getContent());
+                final ACLMessage propose = cfp.createReply();
                 long myTimeToInitialFloor = expectedTimeToFloor(proposedRequest.getInitialFloor());
                 if (myTimeToInitialFloor <= proposedRequest.getTimeToInitialFloor()) {
                     display(cfp.getSender().getLocalName() + " sent request proposed with " + myTimeToInitialFloor);
                     propose.setPerformative(ACLMessage.PROPOSE);
-                    MessageContent myPropose = new MessageContent(proposedRequest.getInitialFloor(), proposedRequest.getDestinationFloor(), myTimeToInitialFloor);
+                    final MessageContent myPropose = new MessageContent(proposedRequest.getInitialFloor(), proposedRequest.getDestinationFloor(), myTimeToInitialFloor);
                     propose.setContent(myPropose.toString());
                     statistics.setProposesSent(statistics.getProposesSent() + 1);
                 } else {
@@ -406,13 +434,18 @@ public class Elevator extends MyAgent {
                 return propose;
             }
 
+            @Override
             protected ACLMessage handleAcceptProposal(ACLMessage cfp, ACLMessage propose, ACLMessage accept) throws FailureException {
                 super.handleAcceptProposal(cfp, propose, accept);
-                display(cfp.getSender().getLocalName() + " sent request added");
-                MessageContent messageContent = new MessageContent(cfp.getContent());
+                final MessageContent messageContent = new MessageContent(cfp.getContent());
                 internalRequests.add(new Request(messageContent.getInitialFloor(), messageContent.getDestinationFloor()));
                 statistics.setAcceptProposalsReceived(statistics.getAcceptProposalsReceived() + 1);
-                return null;
+
+                final ACLMessage inform = accept.createReply();
+                inform.setPerformative(ACLMessage.INFORM);
+                inform.setContent(cfp.getContent());
+                display(cfp.getSender().getLocalName() + " sent request added");
+                return inform;
             }
         });
     }
