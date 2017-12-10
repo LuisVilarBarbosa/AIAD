@@ -1,4 +1,4 @@
-\documentclass[a4paper]{article}
+﻿\documentclass[a4paper]{article}
 
 %use the english line for english reports
 %usepackage[english]{babel}
@@ -95,29 +95,27 @@ Todas estas informações são lidas do ficheiro de configuração \textbf{defau
 Este agente tem o seguinte \textbf{comportamento}:
 
 \begin{itemize}
-\item Cria o número de pedidos definidos, definindo inicialmente o andar inicial, sendo que aqui se assumiu que o andar final era o mesmo que o inicial. 
-\item Cada pedido é atribuído a um elevador aleatório, verificando se esse elevador possui teclado. Caso possua, o andar de destino é atualizado uma vez que já era conhecido. Caso contrário, mantém-se a assunção inicial. 
-\item De seguida, cria-se uma \textit{ACLMessage} do tipo \textit{CFP} com o seguinte conteúdo: \textbf{Andar Inicial, Andar Destino, Tempo para o Andar Inicial}. Esta é enviada pelo \textit{Building} para o \textbf{Elevator} escolhido anteriormente, utilizando o protocolo de interação \textit{FIPA Contract Net}.
-\end{itemize}
+\item Cria o número de pedidos definidos, definindo o andar inicial e, dependendo se existe teclado ou não, define um andar de destino diferente do inicial ou assume temporariamente que o andar de destino é o mesmo que o inicial. 
+\item Cada pedido é atribuído ao elevador que indica um melhor tempo para levar o utilizador ao andar de destino, usando uma \textit{contract net}. 
+\item Para isso, cria-se uma \textit{ACLMessage} do tipo \textit{CFP} com o seguinte conteúdo: \textbf{Andar Inicial, Andar Destino, Tempo para completar o pedido}. Esta é enviada pelo \textit{Building} para os \textbf{Elevator}, utilizando o protocolo de interação \textit{FIPA Contract Net}. Os \textbf{Elevator} irão retornar uma mensagem do tipo \textit{Propose} com o seu tempo até completar o pedido. O \textbf{Building} irá receber as respostas e escolher a melhor, enviando uma mensagem do tipo \textit{Accept Proposal} ao \textbf{Elevator} que enviou a melhor proposta. Por fim, o \textbf{Elevator} recetor irá enviar uma mensagem do tipo \textit{Inform} a indicar que recebeu a mensagem do tipo \textit{Accept Proposal}\end{itemize}
 
 \subsubsection {\textit{Elevator}}
 
 O \textit{Elevator} regista-se no serviço do \textit{Directory Facilitator} com o tipo "Elevator", de forma a que o \textit{Building} (e outros que subscrevam o \textit{Directory Facilitator}) saiba que este existe. Tem a seguinte \textbf{arquitetura}:
 
 \begin{itemize}
-\item \textbf{properties} -  informações sobre o peso máximo, tempo de movimento, tempo de entrada/saída de pessoas, ter/não ter teclado
+\item \textbf{properties} -  informações sobre o peso máximo, tempo de movimento, tempo de entrada/saída de pessoas
 \item \textbf{state} - informações sobre o piso atual, peso atual, estado de movimento ("STOPPED", "GOING\_UP" ou "GOING\_DOWN") e nº de pessoas
 \item \textbf{internalRequests} - lista interna de pedidos a realizar, que é dinâmica, uma vez que pode ser alterada caso outros elevadores lhe atribuam um novo pedido, ou caso seja feito um novo pedido no \textit{Building}
 \item \textbf{statistics} - estatísticas utilizadas na interface
-\item \textbf{startupTime} - tempo de inicialização
-\item \textbf{numElevators} - o elevador sabe qual elevadores existem no total
+\item \textbf{startupTime} – momento em que foi iniciado
 \end{itemize}
 
 Este agente tem o seguinte \textbf{comportamento}:
 
-Caso a negociação entre elevadores seja permitida, tenta negociar com outros elevadores os pedidos internos, através do envio de uma \textit{ACLMessage} do tipo \textit{CFP}, utilizando o protocolo de interação \textit{FIPA Contract Net}. Os outros elevadores são adicionados como recetores da mensagem. Para cada pedido que ainda não tenha sido atendido, é procurado o pedido que vai ser mais demorado a executar, sendo esse o \textit{initiator} do \textit{Contract Net Behaviour}.
+Caso a negociação entre elevadores seja permitida, tenta negociar com outros elevadores os pedidos internos, através do envio de uma \textit{ACLMessage} do tipo \textit{CFP}, utilizando o protocolo de interação \textit{FIPA Contract Net}. Os outros elevadores são adicionados como recetores da mensagem, usando o Directory Facilitator. Para cada pedido que ainda não tenha sido atendido, é procurado o pedido que vai ser mais demorado a executar, sendo esse pedido enviado pelo \textit{Elevator} que gera um \textit{Contract Net Initiator Behaviour}.
 
-É feita a verificação da existência de algum pedido para o piso atual do elevador, e se ainda não foi atendido. Caso isto se verifique, o elevador para e é gerado um novo peso que não exceda a capacidade do mesmo. Este peso pretende simular a entrada de uma ou mais pessoas com ou sem pesos. Existem casos em que é gerado o valor 0 de forma a aproximar a uma situação real, pois por vezes não é possível satisfazer o pedido pois o elevador já se encontra lotado. Durante o tempo de entrada de pessoa, é assegurado que não se atendem outros pedidos.
+É feita a verificação da existência de algum pedido para o piso atual do elevador, e se ainda não foi atendido. Caso isto se verifique, o elevador para e é gerado um novo peso que não exceda a capacidade do mesmo. Este peso pretende simular a entrada de uma pessoa. Existem casos em que é gerado o valor 0 de forma a aproximar a uma situação real, pois por vezes não é possível satisfazer o pedido pois o elevador já se encontra lotado. Durante o tempo de entrada de pessoas, só são atendidos pedidos com piso inicial nesse andar.
 
 A forma de o elevador decidir para que andar se deve dirigir tem por base o andar mais próximo do atual. É verificado todo o conjunto de pedidos do elevador, isto é, caso já tenha sido um pedido atendido, verifica-se qual é o andar de destino mais próximo. Caso seja um pedido externi, verifica-se qual é o andar de partida mais próximo.
 
