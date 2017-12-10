@@ -83,7 +83,8 @@ public class Elevator extends MyAgent {
                     case 2:
                         if (state.getMovementState() != ElevatorState.STOPPED)
                             moveOneFloor();
-                        fsm1State = (fsm1State + 1) % 4;
+                        else
+                            fsm1State = (fsm1State + 1) % 4;
                         break;
                     case 3:
                         peopleExit();
@@ -391,11 +392,11 @@ public class Elevator extends MyAgent {
             @Override
             protected void handleInform(ACLMessage inform) {
                 super.handleInform(inform);
+                display(inform.getSender().getLocalName() + " informed that received the accepted proposal message");
                 final MessageContent messageContent = new MessageContent(inform.getContent());
                 for (int i = 0; i < internalRequests.size(); i++) {
                     final Request request = internalRequests.get(i);
-                    if (request.getInitialFloor() == messageContent.getInitialFloor() && request.getDestinationFloor() == messageContent.getDestinationFloor()) {
-                        display(inform.getSender().getLocalName() + " informed that received the accepted proposal message");
+                    if (request.getInitialFloor() == messageContent.getInitialFloor() && request.getDestinationFloor() == messageContent.getDestinationFloor() && !request.isAttended()) {
                         internalRequests.remove(i);
                         break;
                     }
