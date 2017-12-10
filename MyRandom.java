@@ -1,7 +1,7 @@
 import java.util.Random;
 
 public class MyRandom {
-    private static Random random = new Random();
+    private static final Random random = new Random();
 
     public static int randomFloor(final int numFloors) {
         final int rand = randomInt(0, numFloors * 2);

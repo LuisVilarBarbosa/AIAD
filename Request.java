@@ -6,7 +6,7 @@ public class Request implements Comparable {
     private int weight;
 
     public Request(final int initialFloor) {
-        this(initialFloor, initialFloor /*assumption*/);
+        this(initialFloor, initialFloor);
     }
 
     public Request(final int initialFloor, final int destinationFloor) {

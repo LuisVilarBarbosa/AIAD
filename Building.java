@@ -69,6 +69,7 @@ public class Building extends MyAgent {
     private void setupContractNetInitiatorBehaviour(ACLMessage message) {
         addBehaviour(new ContractNetInitiator(this, message) {
 
+            @SuppressWarnings("unchecked")
             protected void handleAllResponses(Vector responses, Vector acceptances) {
                 super.handleAllResponses(responses, acceptances);
 

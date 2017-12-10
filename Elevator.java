@@ -20,7 +20,7 @@ public class Elevator extends MyAgent {
     private final ElevatorProperties properties;
     private final BuildingProperties buildingProperties;
     private final ElevatorState state;
-    private ArrayList<Request> internalRequests;
+    private final ArrayList<Request> internalRequests;
     private final ElevatorStatistics statistics;
     private final long startupTime;
 
@@ -105,7 +105,7 @@ public class Elevator extends MyAgent {
                             state.setMovementState(ElevatorState.STOPPED);
                             newWeight = generateWeight();
                             if (newWeight == 0)
-                                cyclePos++; // unable to attend request
+                                cyclePos++; // Unable to attend request
                             else {
                                 blockStart = System.currentTimeMillis();
                                 final long waitTime = blockStart - request.getCreationTime();
@@ -330,6 +330,7 @@ public class Elevator extends MyAgent {
                     display("Agent " + failure.getSender().getLocalName() + " failed");
             }
 
+            @SuppressWarnings("unchecked")
             protected void handleAllResponses(Vector responses, Vector acceptances) {
                 super.handleAllResponses(responses, acceptances);
 
@@ -431,30 +432,28 @@ public class Elevator extends MyAgent {
     }
 
     private String stateString(final int nextFloorToStop) {
-        final StringBuilder sb = new StringBuilder();
-        sb.append(state.getCurrentFloor());
-        sb.append(MyInterface.separator).append(state.getCurrentWeight());
-        sb.append(MyInterface.separator).append(internalRequests.size());
-        sb.append(MyInterface.separator).append(ElevatorState.getMovementStateString(state.getMovementState()));
-        sb.append(MyInterface.separator).append(nextFloorToStop);
-        sb.append(MyInterface.separator).append(state.getNumPeople());
-        sb.append(MyInterface.separator).append(statistics.getCFPsSent());
-        sb.append(MyInterface.separator).append(statistics.getProposesSent());
-        sb.append(MyInterface.separator).append(statistics.getRefusesSent());
-        sb.append(MyInterface.separator).append(statistics.getAcceptProposalsSent());
-        sb.append(MyInterface.separator).append(statistics.getAcceptProposalsReceived());
-        sb.append(MyInterface.separator).append(statistics.getPeopleEntranceTime());
-        sb.append(MyInterface.separator).append(statistics.getPeopleExitTime());
-        sb.append(MyInterface.separator).append(statistics.getMinWaitTime());
-        sb.append(MyInterface.separator).append(statistics.getMaxWaitTime());
-        sb.append(MyInterface.separator).append(statistics.getUptime());
-        sb.append(MyInterface.separator).append(statistics.getDowntime());
-        sb.append(MyInterface.separator).append(statistics.getUseRate());
-        sb.append(MyInterface.separator).append(properties.getMaxWeight());
-        sb.append(MyInterface.separator).append(properties.getMovementTime());
-        sb.append(MyInterface.separator).append(properties.getPersonEntranceTime());
-        sb.append(MyInterface.separator).append(properties.getPersonExitTime());
-        return sb.toString();
+        return state.getCurrentFloor() +
+                MyInterface.separator + state.getCurrentWeight() +
+                MyInterface.separator + internalRequests.size() +
+                MyInterface.separator + ElevatorState.getMovementStateString(state.getMovementState()) +
+                MyInterface.separator + nextFloorToStop +
+                MyInterface.separator + state.getNumPeople() +
+                MyInterface.separator + statistics.getCFPsSent() +
+                MyInterface.separator + statistics.getProposesSent() +
+                MyInterface.separator + statistics.getRefusesSent() +
+                MyInterface.separator + statistics.getAcceptProposalsSent() +
+                MyInterface.separator + statistics.getAcceptProposalsReceived() +
+                MyInterface.separator + statistics.getPeopleEntranceTime() +
+                MyInterface.separator + statistics.getPeopleExitTime() +
+                MyInterface.separator + statistics.getMinWaitTime() +
+                MyInterface.separator + statistics.getMaxWaitTime() +
+                MyInterface.separator + statistics.getUptime() +
+                MyInterface.separator + statistics.getDowntime() +
+                MyInterface.separator + statistics.getUseRate() +
+                MyInterface.separator + properties.getMaxWeight() +
+                MyInterface.separator + properties.getMovementTime() +
+                MyInterface.separator + properties.getPersonEntranceTime() +
+                MyInterface.separator + properties.getPersonExitTime();
     }
 
     private long expectedTimeToFloor(int floor) {
