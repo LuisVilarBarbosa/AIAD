@@ -309,16 +309,19 @@ public class Elevator extends MyAgent {
     private void setupContractNetInitiatorBehaviour(ACLMessage message) {
         addBehaviour(new ContractNetInitiator(this, message) {
 
+            @Override
             protected void handlePropose(ACLMessage propose, Vector v) {
                 super.handlePropose(propose, v);
                 display("Agent " + propose.getSender().getLocalName() + " proposed " + propose.getContent());
             }
 
+            @Override
             protected void handleRefuse(ACLMessage refuse) {
                 super.handleRefuse(refuse);
                 display("Agent " + refuse.getSender().getLocalName() + " refused");
             }
 
+            @Override
             protected void handleFailure(ACLMessage failure) {
                 super.handleFailure(failure);
                 if (failure.getSender().equals(myAgent.getAMS())) {
@@ -330,6 +333,7 @@ public class Elevator extends MyAgent {
             }
 
             @SuppressWarnings("unchecked")
+            @Override
             protected void handleAllResponses(Vector responses, Vector acceptances) {
                 super.handleAllResponses(responses, acceptances);
 
@@ -367,11 +371,24 @@ public class Elevator extends MyAgent {
                         if (request.getInitialFloor() == acceptedRequest.getInitialFloor() && request.getDestinationFloor() == acceptedRequest.getDestinationFloor() && !request.isAttended()) {
                             display("Accepting proposal " + bestProposal + " from responder " + bestProposer.getLocalName());
                             accept.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
-                            internalRequests.remove(i);
                             statistics.setAcceptProposalsSent(statistics.getAcceptProposalsSent() + 1);
                             break;
                         } else
                             i++;
+                    }
+                }
+            }
+
+            @Override
+            protected void handleInform(ACLMessage inform) {
+                super.handleInform(inform);
+                MessageContent messageContent = new MessageContent(inform.getContent());
+                for(int i = 0; i < internalRequests.size();i++){
+                    Request request = internalRequests.get(i);
+                    if(request.getInitialFloor() == messageContent.getInitialFloor() && request.getDestinationFloor() == messageContent.getDestinationFloor()){
+                        display(inform.getSender().getLocalName() + " informed that received the accepted proposal message");
+                        internalRequests.remove(i);
+                        break;
                     }
                 }
             }
@@ -408,11 +425,15 @@ public class Elevator extends MyAgent {
 
             protected ACLMessage handleAcceptProposal(ACLMessage cfp, ACLMessage propose, ACLMessage accept) throws FailureException {
                 super.handleAcceptProposal(cfp, propose, accept);
-                display(cfp.getSender().getLocalName() + " sent request added");
                 MessageContent messageContent = new MessageContent(cfp.getContent());
                 internalRequests.add(new Request(messageContent.getInitialFloor(), messageContent.getDestinationFloor()));
                 statistics.setAcceptProposalsReceived(statistics.getAcceptProposalsReceived() + 1);
-                return null;
+
+                ACLMessage inform = accept.createReply();
+                inform.setPerformative(ACLMessage.INFORM);
+                inform.setContent(cfp.getContent());
+                display(cfp.getSender().getLocalName() + " sent request added");
+                return inform;
             }
         });
     }

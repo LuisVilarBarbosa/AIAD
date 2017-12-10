@@ -70,6 +70,7 @@ public class Building extends MyAgent {
         addBehaviour(new ContractNetInitiator(this, message) {
 
             @SuppressWarnings("unchecked")
+            @Override
             protected void handleAllResponses(Vector responses, Vector acceptances) {
                 super.handleAllResponses(responses, acceptances);
 
@@ -97,6 +98,12 @@ public class Building extends MyAgent {
 
                 if (accept != null)
                     accept.setPerformative(ACLMessage.ACCEPT_PROPOSAL);
+            }
+
+            @Override
+            protected void handleInform(ACLMessage inform) {
+                super.handleInform(inform);
+                display(inform.getSender().getLocalName() + " informed that received the accepted proposal message");
             }
         });
     }

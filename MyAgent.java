@@ -15,7 +15,8 @@ public class MyAgent extends Agent {
 
     @Override
     public void doDelete() {
-        display("State change request to 'deleted' ignored.");
+        super.doDelete();;
+        display("State change request to 'deleted' performed.");
     }
 
     protected void blockBehaviour(final long millis, Behaviour behaviour) {
