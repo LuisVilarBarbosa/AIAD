@@ -1,0 +1,232 @@
+\documentclass[a4paper]{article}
+
+%use the english line for english reports
+%usepackage[english]{babel}
+\usepackage[portuguese]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{indentfirst}
+\usepackage{graphicx}
+\usepackage{verbatim}
+\usepackage{listings}
+
+\begin{document}
+
+\setlength{\textwidth}{16cm}
+\setlength{\textheight}{22cm}
+
+\title{\Huge\textbf{Gestão de Elevadores}\linebreak\linebreak\linebreak
+\Large\textbf{Relatório Final}\linebreak\linebreak
+\linebreak\linebreak
+\includegraphics[scale=0.1]{feup-logo.png}\linebreak\linebreak
+\linebreak\linebreak
+\Large{Mestrado Integrado em Engenharia Informática e Computação} \linebreak\linebreak
+\Large{Agentes e Inteligência Artificial Distribuída}\linebreak
+\Large{4º Ano 1º Semestre}\linebreak\linebreak
+}
+
+\author{\textbf{Grupo T01\_3:}\\ Luís  Barbosa - 201405729 - up201405729@fe.up.pt\\ Paulo Santos - 201403745 - up201403745@fe.up.pt \\ Sérgio Almeida  - 201403074 - up201403074@fe.up.pt \\\linebreak\linebreak \\
+ \\ Faculdade de Engenharia da Universidade do Porto \\ Rua Roberto Frias, s/n, 4200-465 Porto, Portugal \linebreak\linebreak\linebreak
+\linebreak\linebreak\vspace{1cm}}
+\date{10 de dezembro de 2017}
+\maketitle
+\thispagestyle{empty}
+
+%************************************************************************************************
+%************************************************************************************************
+
+\newpage
+
+\tableofcontents
+
+%************************************************************************************************
+%************************************************************************************************
+
+%*************************************************************************************************
+%************************************************************************************************
+
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Objetivo}
+
+\subsection{Descrição do cenário} 
+
+O cenário do presente trabalho consiste num edifício de vários andares com diversos elevadores. Cada elevador possui uma carga máxima, que corresponde ao número máximo de pessoas que pode transportar.
+
+Os elevadores comunicam entre si informação relevante. Quando há um novo pedido numa determinada zona do edifício, este deve ser alocado a um dos elevadores existentes naquela zona. Os elevadores possuem uma lista de pisos em que têm que parar, podendo a mesma ser alterada dinamicamente para se incluirem novos pedidos.
+
+Periodicamente, os elevadores podem partilhar informação sobre os seus estados, no sentido de poderem atribuir tarefas a outros elevadores.
+
+O programa deve permitir que o utilizador configure o sistema, como o número de pisos do edifício, número de elevadores e a carga máxima de cada elevador.
+
+As necessidades dos utentes, como por exemplo a frequência de chamada de elevador em cada piso do edifício (devendo ser superior para o piso 0) e piso de destino, são geradas aleatoriamente. 
+
+Um elevador demora um tempo pré-definido a ir de um piso a outro, sendo que o intervalo de tempo correspondente à paragem do elevador para entrada/saída de utentes também é contabilizado.
+
+\subsection{Objetivos do trabalho} 
+
+O trabalho tem como principal objetivo o desenvolvimento de um sistema multi-agente para a gestão eficiente dos elevadores de um determinado edifício, tendo em conta o cenário descrito acima. Para tal, será necessária a implementação de um algoritmo que permita gerir as chamadas aos elevadores de forma a que o transporte seja feito o mais rápido possível.
+
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Especificação}
+
+\subsection{Identificação e caracterização dos agentes} 
+
+No nosso projeto, distinguem-se dois tipos de agentes: \textit{Elevator} e \textit{Building}.
+
+\subsubsection {\textit{Building}}
+
+O \textit{Building} é instanciado apenas uma vez, assim que o programa é iniciado. Regista-se no \textit{DFService}, criando um \textit{DFAgentDescription}, adicionando a este um novo serviço com tipo "Building". Este agente é responsável por gerar elevadores e simular os pedidos existentes num edifício por parte dos utilizadores ao alocar aos elevadores os pedidos. Tem a seguinte \textbf{arquitetura}:
+
+\begin{itemize}
+\item \textbf{properties} - informações sobre o número de andares e elevadores, se existe teclado para efetuar pedido e se a negociação entre elevadores é permitida
+\item \textbf{elevatorsProperties} - informações sobre o peso máximo, tempo de movimento e tempo de entrada/saída de pessoas
+\item \textbf{elevators} - lista com o AID de todos os elevadores
+\item \textbf{reqGenInterval} - valor do intervalo de geração de pedidos pelo edifício
+\item \textbf{randNumRequestsPerInterval} - valor aleatório do número de pedidos gerados por intervalo, caso o valor lido do ficheiro seja "rand"
+\item \textbf{numRequestsPerInterval} - valor lido do número de pedidos gerados por intervalo
+\end{itemize}
+
+Todas estas informações são lidas do ficheiro de configuração \textbf{default.properties}, de forma a tornar o processo de configuração do cenário mais generalizado.
+
+Este agente tem o seguinte \textbf{comportamento}:
+
+\begin{itemize}
+\item Cria o número de pedidos definidos, definindo inicialmente o andar inicial, sendo que aqui se assumiu que o andar final era o mesmo que o inicial. 
+\item Cada pedido é atribuído a um elevador aleatório, verificando se esse elevador possui teclado. Caso possua, o andar de destino é atualizado uma vez que já era conhecido. Caso contrário, mantém-se a assunção inicial. 
+\item De seguida, cria-se uma \textit{ACLMessage} do tipo \textit{CFP} com o seguinte conteúdo: \textbf{Andar Inicial, Andar Destino, Tempo para o Andar Inicial}. Esta é enviada pelo \textit{Building} para o \textbf{Elevator} escolhido anteriormente, utilizando o protocolo de interação \textit{FIPA Contract Net}.
+\end{itemize}
+
+\subsubsection {\textit{Elevator}}
+
+O \textit{Elevator} regista-se no serviço do \textit{Directory Facilitator} com o tipo "Elevator", de forma a que o \textit{Building} (e outros que subscrevam o \textit{Directory Facilitator}) saiba que este existe. Tem a seguinte \textbf{arquitetura}:
+
+\begin{itemize}
+\item \textbf{properties} -  informações sobre o peso máximo, tempo de movimento, tempo de entrada/saída de pessoas, ter/não ter teclado
+\item \textbf{state} - informações sobre o piso atual, peso atual, estado de movimento ("STOPPED", "GOING\_UP" ou "GOING\_DOWN") e nº de pessoas
+\item \textbf{internalRequests} - lista interna de pedidos a realizar, que é dinâmica, uma vez que pode ser alterada caso outros elevadores lhe atribuam um novo pedido, ou caso seja feito um novo pedido no \textit{Building}
+\item \textbf{statistics} - estatísticas utilizadas na interface
+\item \textbf{startupTime} - tempo de inicialização
+\item \textbf{numElevators} - o elevador sabe qual elevadores existem no total
+\end{itemize}
+
+Este agente tem o seguinte \textbf{comportamento}:
+
+Caso a negociação entre elevadores seja permitida, tenta negociar com outros elevadores os pedidos internos, através do envio de uma \textit{ACLMessage} do tipo \textit{CFP}, utilizando o protocolo de interação \textit{FIPA Contract Net}. Os outros elevadores são adicionados como recetores da mensagem. Para cada pedido que ainda não tenha sido atendido, é procurado o pedido que vai ser mais demorado a executar, sendo esse o \textit{initiator} do \textit{Contract Net Behaviour}.
+
+É feita a verificação da existência de algum pedido para o piso atual do elevador, e se ainda não foi atendido. Caso isto se verifique, o elevador para e é gerado um novo peso que não exceda a capacidade do mesmo. Este peso pretende simular a entrada de uma ou mais pessoas com ou sem pesos. Existem casos em que é gerado o valor 0 de forma a aproximar a uma situação real, pois por vezes não é possível satisfazer o pedido pois o elevador já se encontra lotado. Durante o tempo de entrada de pessoa, é assegurado que não se atendem outros pedidos.
+
+A forma de o elevador decidir para que andar se deve dirigir tem por base o andar mais próximo do atual. É verificado todo o conjunto de pedidos do elevador, isto é, caso já tenha sido um pedido atendido, verifica-se qual é o andar de destino mais próximo. Caso seja um pedido externi, verifica-se qual é o andar de partida mais próximo.
+
+O algoritmo de decisão tenta, em todos os andares, otimizar a distância ao próximo andar. Desta forma, garantimos que não ande um grande número de andares sem parar quando era mais eficiente ter parado a meio para atender mais pedidos.
+
+Verifica, também, para todos os pedidos atendidos do elevador, se estes já se encontram no andar de destino. Quanto isto acontece, o elevador para e é simulada a saída da pessoa que tinha feito o pedido.
+
+\subsection{Estratégias e processos de raciocínio} 
+
+De forma a comparar o desempenho dos elevadores com diferentes heurísticas, foram implementadas duas estratégias de alocação de pedidos. Estas duas estratégias suportam outros dois modelos: um em que existe apenas um botão de chamada, e o outro assume a existência de um teclado onde é possível indicar o piso de destino.
+
+A \textbf{primeira} estratégia assume o sistema tradicional onde cada elevador possui uma estratégia fixa e individual: atende o pedido o elevador que se encontra mais próximo do piso onde a chamada foi efetuada. Para isto ser possível, os elevadores comunicam entre si através do protocolo de interação que será descrito mais à frente. 
+
+Para tornar o envio de requests para outros elevadores melhor, seria necessário pedir-lhes feedback para todos os requests e isso sobrecarregaria a rede de negociação, só se pedindo ajuda para o pior pedido de cada vez. Se não podem ajudar para o pior, provavelmente não podem ajudar para outros. E iterativamente, ao alocar os piores pedidos a outros, optimiza-se/reduz-se os tempos de espera.
+
+A \textbf{segunda} estratégia irá estimar o tempo que o elevador demoraria a responder a um pedido caso o mesmo fosse alocado a ele, tendo em conta a lista de pedidos que o elevador possui.
+
+\subsection{Protocolos de interação} 
+
+FIPA CONTRACT NET (Sérgio)
+
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Desenvolvimento}
+
+\subsection{Plataforma/ferramenta utilizada e ambiente de desenvolvimento} 
+
+A ferramenta escolhida para o desenvolvimento deste trabalho foi JADE. JADE é uma framework que permite o desenvolvimento de sistemas multiagente e é compatível com FIPA, isto é, segue os padrões de software estabelecidos para agentes heterogéneos e interativos e para sistemas baseados em agentes.
+
+O projeto foi desenvolvido utilizando o IntelliJ IDEA Community Edition no sistema operativo Windows 10.
+
+\subsection{Estrutura da aplicação} 
+
+(Sérgio já tem o diagrama de classes)
+
+\subsection{Detalhes relevantes da implementação} 
+
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Experiências}
+
+\subsection{Objetivo de cada experiência} 
+
+\subsection{Resultados}
+
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Conclusões}
+
+\subsection{Da análise dos resultados das experiências levadas a cabo} 
+
+\subsection{Do desenvolvimento do trabalho e aplicabilidade de SMA ao cenário proposto}
+
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Melhoramentos}
+
+\subsection{Sugestões para melhoramentos a introduzir no programa}
+
+De forma a conseguirmos ter uma melhor comparação era importante adicionar mais estratégias de respostas aos pedidos, conseguindo assim realizar mais experiências e extraindo novas conclusões.
+
+Achamos que a interface podia ser ligeiramente melhorada, de forma a demonstrar melhor o funcionamento dos elevadores, como eles subirem/descerem e abrirem/fechar as portas à entrada/saída dos utentes. No entanto, consideramos que as estatísticas demonstradas conseguem transmitir uma boa ideia daquilo que se está a suceder.
+
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Recursos}
+
+\subsection{Bibliografia} 
+
+Slides do Moodle sobre JADE
+
+Documentação do JADE
+
+Código fonte do JADE
+
+\subsection{Software} 
+
+JADE (http://jade.tilab.com/)
+
+Eclipse IDE for Java
+
+IntelliJ IDEA Community Edition
+
+\subsection{Elementos do grupo}
+
+O grupo trabalhou de forma equitativa durante as aulas práticas e houve boa comunicação entre os membros, de forma a que cada elemento soubesse o que estava a ser feito.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Apêndice}
+
+\subsection{Manual do utilizador} 
+
+Para conseguir correr o projeto, deve:
+
+1. Importar o projeto;
+
+2. Adicionar a \textit{library} do \textit{JADE} ao \textit{build path};
+
+3. Editar o ficheiro default.properties consoante o que deseja visualizar na interface;
+
+4. Correr, utilizando a classe MyBoot como \textit{main}.
+
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\end{document}
