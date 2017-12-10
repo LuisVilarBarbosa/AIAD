@@ -105,6 +105,9 @@ public class MyInterface extends MyAgent {
             ACLMessage msg;
             boolean updated = false;
             while ((msg = receive(MessageTemplate.MatchProtocol(MyInterface.agentType))) != null) {
+                /* block() - Only takes action when action() is finished and
+                the behaviour is reactivated when a message is received by the agent */
+                block();
                 updated = true;
                 elevatorsData.put(msg.getSender(), msg.getContent().split(MyInterface.separator));
             }
@@ -116,10 +119,12 @@ public class MyInterface extends MyAgent {
     }
 
     private class UpdateGUIDimensionsBehaviour extends CyclicBehaviour {
+        private final long timeout = 20;
 
         @Override
         public void action() {
             jScrollPane.setPreferredSize(jScrollPane.getParent().getSize());
+            blockBehaviour(timeout, this);
         }
     }
 }

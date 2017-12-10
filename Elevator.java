@@ -284,9 +284,10 @@ public class Elevator extends MyAgent {
                 aclMessage.setReplyByDate(new Date(System.currentTimeMillis() + timeout));
                 aclMessage.setSender(myAgent.getAID());
                 DFAgentDescription[] dfAgentDescriptions = searchOnDFService(Elevator.agentType);
-                numResponders = dfAgentDescriptions.length;
+                numResponders = dfAgentDescriptions.length - 1;
                 for (DFAgentDescription dfAgentDescription : dfAgentDescriptions)
-                    aclMessage.addReceiver(dfAgentDescription.getName());
+                    if (!dfAgentDescription.getName().equals(myAgent.getAID()))
+                        aclMessage.addReceiver(dfAgentDescription.getName());
 
                 final long currentTime = System.currentTimeMillis();
                 long largestWaitTime = 0;
