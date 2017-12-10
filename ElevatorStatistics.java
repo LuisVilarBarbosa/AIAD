@@ -61,20 +61,20 @@ public class ElevatorStatistics {
         return acceptProposalsSent;
     }
 
-    public void setAcceptProposalsSent(int acceptedProposalsSent) {
-        if (acceptedProposalsSent < 0)
-            throw new IllegalArgumentException("Invalid number of accepted proposals sent: " + acceptedProposalsSent);
-        this.acceptProposalsSent = acceptedProposalsSent;
+    public void setAcceptProposalsSent(int acceptProposalsSent) {
+        if (acceptProposalsSent < 0)
+            throw new IllegalArgumentException("Invalid number of accept proposals sent: " + acceptProposalsSent);
+        this.acceptProposalsSent = acceptProposalsSent;
     }
 
     public int getAcceptProposalsReceived() {
         return acceptProposalsReceived;
     }
 
-    public void setAcceptProposalsReceived(int acceptedProposalsReceived) {
-        if (acceptedProposalsReceived < 0)
-            throw new IllegalArgumentException("Invalid number of accepted proposals received: " + acceptedProposalsReceived);
-        this.acceptProposalsReceived = acceptedProposalsReceived;
+    public void setAcceptProposalsReceived(int acceptProposalsReceived) {
+        if (acceptProposalsReceived < 0)
+            throw new IllegalArgumentException("Invalid number of accept proposals received: " + acceptProposalsReceived);
+        this.acceptProposalsReceived = acceptProposalsReceived;
     }
 
     public long getPeopleEntranceTime() {

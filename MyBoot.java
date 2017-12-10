@@ -25,6 +25,7 @@ public class MyBoot extends Boot {
     private static final String PERSON_EXIT_TIME = "personExitTime";
     private static final String KEYBOARD_ON_REQUEST = "keyboardOnRequest";
     private static final String STATISTICS_FILENAME = "statisticsFilename";
+    private static final String ELEVATORS_NEGOTIATION_ALLOWED = "elevatorsNegotiationAllowed";
     private static final String DEFAULT_NUM_FLOORS = "3";
     private static final String DEFAULT_NUM_ELEVATORS = "5";
     private static final String DEFAULT_MAX_WEIGHT = "500";
@@ -35,6 +36,7 @@ public class MyBoot extends Boot {
     private static final String DEFAULT_PERSON_EXIT_TIME = "1000";
     private static final String DEFAULT_KEYBOARD_ON_REQUEST = "false";
     private static final String DEFAULT_STATISTICS_FILENAME = "ElevatorsStatistics.txt";
+    private static final String DEFAULT_ELEVATORS_NEGOTIATION_ALLOWED = "true";
 
     /**
      * Fires up the <b><em>JADE</em></b> system.
@@ -87,31 +89,27 @@ public class MyBoot extends Boot {
                 final long reqGenInterval = Integer.parseInt(p.getParameter(REQUEST_GENERATION_INTERVAL, DEFAULT_REQUEST_GENERATION_INTERVAL));
                 final String numRequestsPerIntervalStr = p.getParameter(NUM_REQUESTS_PER_INTERVAL, DEFAULT_NUM_REQUESTS_PER_INTERVAL);
                 final String statisticsFilename = p.getParameter(STATISTICS_FILENAME, DEFAULT_STATISTICS_FILENAME);
+                final String keyboardOnReqStr = p.getParameter(KEYBOARD_ON_REQUEST, DEFAULT_KEYBOARD_ON_REQUEST);
+                final String elevatorsNegotiationAllowedStr = p.getParameter(ELEVATORS_NEGOTIATION_ALLOWED, DEFAULT_ELEVATORS_NEGOTIATION_ALLOWED);
+                final boolean keyboardOnReq = parseStringToBoolean(keyboardOnReqStr, KEYBOARD_ON_REQUEST);
+                final boolean elevatorsNegotiationAllowed = parseStringToBoolean(elevatorsNegotiationAllowedStr, ELEVATORS_NEGOTIATION_ALLOWED);
+
                 final ArrayList<ElevatorProperties> elevatorsProperties = new ArrayList<>();
                 for (int i = 0; i < numElevators; i++) {
                     final int maxWeight = Integer.parseInt(p.getParameter(MAX_WEIGHT_PARAMETER + i, DEFAULT_MAX_WEIGHT));
                     final long movementTime = Long.parseLong(p.getParameter(MOVEMENT_TIME_PARAMETER + i, DEFAULT_MOVEMENT_TIME));
                     final int entranceTime = Integer.parseInt(p.getParameter(PERSON_ENTRANCE_TIME + i, DEFAULT_PERSON_ENTRANCE_TIME));
                     final int exitTime = Integer.parseInt(p.getParameter(PERSON_EXIT_TIME + i, DEFAULT_PERSON_EXIT_TIME));
-                    final String keyboardOnReqStr = p.getParameter(KEYBOARD_ON_REQUEST + i, DEFAULT_KEYBOARD_ON_REQUEST);
-
-                    final boolean keyboardOnReq;
-                    if (keyboardOnReqStr.equalsIgnoreCase("true"))
-                        keyboardOnReq = true;
-                    else if (keyboardOnReqStr.equalsIgnoreCase("false"))
-                        keyboardOnReq = false;
-                    else
-                        throw new IllegalArgumentException("Invalid '" + KEYBOARD_ON_REQUEST + i + "' mode: " + keyboardOnReqStr);
-
-                    ElevatorProperties elevatorProperties = new ElevatorProperties(maxWeight, numFloors, movementTime, entranceTime, exitTime, keyboardOnReq);
+                    ElevatorProperties elevatorProperties = new ElevatorProperties(maxWeight, movementTime, entranceTime, exitTime);
                     elevatorsProperties.add(elevatorProperties);
                 }
 
+                BuildingProperties buildingProperties = new BuildingProperties(numFloors, numElevators, keyboardOnReq, elevatorsNegotiationAllowed);
                 Building building;
                 if (numRequestsPerIntervalStr.equalsIgnoreCase("rand"))
-                    building = new Building(numFloors, reqGenInterval, elevatorsProperties);
+                    building = new Building(buildingProperties, reqGenInterval, elevatorsProperties);
                 else
-                    building = new Building(numFloors, reqGenInterval, Integer.parseInt(numRequestsPerIntervalStr), elevatorsProperties);
+                    building = new Building(buildingProperties, reqGenInterval, Integer.parseInt(numRequestsPerIntervalStr), elevatorsProperties);
 
                 final AgentController buildingAC = containerController.acceptNewAgent(Building.agentType, building);
                 buildingAC.start();
@@ -136,9 +134,9 @@ public class MyBoot extends Boot {
     public static void printUsage() {
         String usage = "\nUsage:\n" +
                 "Command-type 1: java -classpath \"jade.jar;.\" MyBoot [<filename>]\n" +
-                "Command-type 2: java -classpath \"jade.jar;.\" MyBoot [-gui] -" + NUM_FLOORS_PARAMETER + " 5 -" + NUM_ELEVATORS_PARAMETER + " 3 -" + MAX_WEIGHT_PARAMETER + "0 100 -" + MAX_WEIGHT_PARAMETER + "1 200 -" + MAX_WEIGHT_PARAMETER + "2 300 -" + MOVEMENT_TIME_PARAMETER + "0 1000 -" + MOVEMENT_TIME_PARAMETER + "1 500 -" + MOVEMENT_TIME_PARAMETER + "2 2000 -" + PERSON_ENTRANCE_TIME + "0 1000 -" + PERSON_ENTRANCE_TIME + "1 1000 -" + PERSON_ENTRANCE_TIME + "2 1000 -" + PERSON_EXIT_TIME + "0 1000 -" + PERSON_EXIT_TIME + "1 1000 -" + PERSON_EXIT_TIME + "2 1000 -" + KEYBOARD_ON_REQUEST + "0 false -" + KEYBOARD_ON_REQUEST + "1 false -" + KEYBOARD_ON_REQUEST + "2 true -" + STATISTICS_FILENAME + " " + DEFAULT_STATISTICS_FILENAME + "\n\n" +
+                "Command-type 2: java -classpath \"jade.jar;.\" MyBoot [-gui] -" + NUM_FLOORS_PARAMETER + " 5 -" + NUM_ELEVATORS_PARAMETER + " 3 -" + MAX_WEIGHT_PARAMETER + "0 100 -" + MAX_WEIGHT_PARAMETER + "1 200 -" + MAX_WEIGHT_PARAMETER + "2 300 -" + MOVEMENT_TIME_PARAMETER + "0 1000 -" + MOVEMENT_TIME_PARAMETER + "1 500 -" + MOVEMENT_TIME_PARAMETER + "2 2000 -" + PERSON_ENTRANCE_TIME + "0 1000 -" + PERSON_ENTRANCE_TIME + "1 1000 -" + PERSON_ENTRANCE_TIME + "2 1000 -" + PERSON_EXIT_TIME + "0 1000 -" + PERSON_EXIT_TIME + "1 1000 -" + PERSON_EXIT_TIME + "2 1000 -" + KEYBOARD_ON_REQUEST + " false -" + STATISTICS_FILENAME + " " + DEFAULT_STATISTICS_FILENAME + " -" + ELEVATORS_NEGOTIATION_ALLOWED + " " + DEFAULT_ELEVATORS_NEGOTIATION_ALLOWED + "\n\n" +
                 "For command-type 1, if no filename is indicated, it will use the default file with name '" + DEFAULT_FILENAME + "'.\n" +
-                "For command-type 2, there should be as many '" + MAX_WEIGHT_PARAMETER + "X', '" + MOVEMENT_TIME_PARAMETER + "X', '" + PERSON_ENTRANCE_TIME + "X', '" + PERSON_EXIT_TIME + "X' and '" + KEYBOARD_ON_REQUEST + "X' as elevators.\n" +
+                "For command-type 2, there should be as many '" + MAX_WEIGHT_PARAMETER + "X', '" + MOVEMENT_TIME_PARAMETER + "X', '" + PERSON_ENTRANCE_TIME + "X' and '" + PERSON_EXIT_TIME + "X' as elevators.\n" +
                 "For both commands types, if some of the values are not indicated, the corresponding default will be associated to the missing value:\n" +
                 "  " + NUM_FLOORS_PARAMETER + "=" + DEFAULT_NUM_FLOORS + "\n" +
                 "  " + NUM_ELEVATORS_PARAMETER + "=" + DEFAULT_NUM_ELEVATORS + "\n" +
@@ -149,9 +147,21 @@ public class MyBoot extends Boot {
                 "  " + PERSON_ENTRANCE_TIME + "=" + DEFAULT_PERSON_ENTRANCE_TIME + "\n" +
                 "  " + PERSON_EXIT_TIME + "=" + DEFAULT_PERSON_EXIT_TIME + "\n" +
                 "  " + KEYBOARD_ON_REQUEST + "=" + DEFAULT_KEYBOARD_ON_REQUEST + "\n" +
-                "  " + STATISTICS_FILENAME + "=" + DEFAULT_STATISTICS_FILENAME + "\n\n" +
+                "  " + STATISTICS_FILENAME + "=" + DEFAULT_STATISTICS_FILENAME + "\n" +
+                "  " + ELEVATORS_NEGOTIATION_ALLOWED + "=" + DEFAULT_ELEVATORS_NEGOTIATION_ALLOWED + "\n\n" +
                 "Additional options (MyBoot extends Boot):\n";
         Console.display(usage);
         Boot.printUsage();
+    }
+
+    private static boolean parseStringToBoolean(final String varValue, final String varName) {
+        final boolean bool;
+        if (varValue.equalsIgnoreCase("true"))
+            bool = true;
+        else if (varValue.equalsIgnoreCase("false"))
+            bool = false;
+        else
+            throw new IllegalArgumentException("Invalid '" + varName + "' mode: " + varValue);
+        return bool;
     }
 }

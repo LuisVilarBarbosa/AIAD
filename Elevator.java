@@ -18,20 +18,20 @@ import java.util.Vector;
 public class Elevator extends MyAgent {
     public static final String agentType = "Elevator";
     private final ElevatorProperties properties;
+    private final BuildingProperties buildingProperties;
     private final ElevatorState state;
     private ArrayList<Request> internalRequests;
     private final ElevatorStatistics statistics;
     private final long startupTime;
-    private final int numElevators;
 
-    public Elevator(final ElevatorProperties properties, final int numElevators) {
+    public Elevator(final ElevatorProperties properties, final BuildingProperties buildingProperties) {
         super();
         this.properties = properties;
+        this.buildingProperties = buildingProperties;
         this.state = new ElevatorState();
         this.internalRequests = new ArrayList<>();
         this.statistics = new ElevatorStatistics();
         this.startupTime = System.currentTimeMillis();
-        this.numElevators = numElevators;
     }
 
     @Override
@@ -61,7 +61,8 @@ public class Elevator extends MyAgent {
 
             switch (fsm1State) {
                 case 0:
-                    proposeRequestToOthers();
+                    if (buildingProperties.isElevatorsNegotiationAllowed())
+                        proposeRequestToOthers();
                     fsm1State = (fsm1State + 1) % 5;
                     break;
                 case 1:
@@ -125,8 +126,8 @@ public class Elevator extends MyAgent {
                             state.setNumPeople(state.getNumPeople() + 1);
                             request.setAttended(newWeight);
                             updateWeight();
-                            if (!properties.hasKeyboardOnRequest())
-                                request.setDestinationFloor(MyRandom.randomFloorDifferentThan(request.getInitialFloor(), properties.getNumFloors()));
+                            if (!buildingProperties.hasKeyboardOnRequest())
+                                request.setDestinationFloor(MyRandom.randomFloorDifferentThan(request.getInitialFloor(), buildingProperties.getNumFloors()));
                             updateInterface();
                             cyclePos++;
                             fsm2State = (fsm2State + 1) % 2;
@@ -261,7 +262,7 @@ public class Elevator extends MyAgent {
                 aclMessage.setProtocol(FIPANames.InteractionProtocol.FIPA_CONTRACT_NET);
                 aclMessage.setReplyByDate(new Date(System.currentTimeMillis() + 2 * Timer.ONE_SECOND));
                 aclMessage.setSender(myAgent.getAID());
-                for (int i = 0; i < numElevators; i++)
+                for (int i = 0; i < buildingProperties.getNumElevators(); i++)
                     if (!myAgent.getAID().getLocalName().equals(Elevator.agentType + i))
                         aclMessage.addReceiver(myAgent.getAID(Elevator.agentType + i));
 
@@ -317,7 +318,7 @@ public class Elevator extends MyAgent {
             protected void handleAllResponses(Vector responses, Vector acceptances) {
                 super.handleAllResponses(responses, acceptances);
 
-                final int numResponses = numElevators - 1;
+                final int numResponses = buildingProperties.getNumElevators() - 1;
                 if (responses.size() < numResponses) {
                     // Some responder didn't reply within the specified timeout
                     display("Timeout expired: missing " + (numResponses - responses.size()) + " responses from " + numResponses + " expected");
@@ -438,7 +439,6 @@ public class Elevator extends MyAgent {
         sb.append(MyInterface.separator).append(properties.getMovementTime());
         sb.append(MyInterface.separator).append(properties.getPersonEntranceTime());
         sb.append(MyInterface.separator).append(properties.getPersonExitTime());
-        sb.append(MyInterface.separator).append(ElevatorProperties.getHasKeyboardOnRequestString(properties.hasKeyboardOnRequest()));
         return sb.toString();
     }
 

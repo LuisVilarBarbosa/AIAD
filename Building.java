@@ -15,31 +15,29 @@ import java.util.Vector;
 
 public class Building extends MyAgent {
     public static final String agentType = "Building";
-    private final int numFloors;
-    private final int numElevators;
+    private final BuildingProperties properties;
     private final ArrayList<ElevatorProperties> elevatorsProperties;
     private final ArrayList<AID> elevators;
     private final long reqGenInterval;
     private final boolean randNumRequestsPerInterval;
     private final int numRequestsPerInterval;
 
-    public Building(final int numFloors, final long reqGenInterval, final ArrayList<ElevatorProperties> elevatorsProperties) {
-        this(numFloors, reqGenInterval, true, 0, elevatorsProperties);
+    public Building(final BuildingProperties properties, final long reqGenInterval, final ArrayList<ElevatorProperties> elevatorsProperties) {
+        this(properties, reqGenInterval, true, 0, elevatorsProperties);
     }
 
-    public Building(final int numFloors, final long reqGenInterval, final int numRequestsPerInterval, final ArrayList<ElevatorProperties> elevatorsProperties) {
-        this(numFloors, reqGenInterval, false, numRequestsPerInterval, elevatorsProperties);
+    public Building(final BuildingProperties properties, final long reqGenInterval, final int numRequestsPerInterval, final ArrayList<ElevatorProperties> elevatorsProperties) {
+        this(properties, reqGenInterval, false, numRequestsPerInterval, elevatorsProperties);
     }
 
-    private Building(final int numFloors, final long reqGenInterval, final boolean randNumRequestsPerInterval, final int numRequestsPerInterval, final ArrayList<ElevatorProperties> elevatorsProperties) {
+    private Building(final BuildingProperties properties, final long reqGenInterval, final boolean randNumRequestsPerInterval, final int numRequestsPerInterval, final ArrayList<ElevatorProperties> elevatorsProperties) {
         super();
-        if (numFloors < 2)
-            throw new IllegalArgumentException("Invalid number of floors: " + numFloors);
         if (reqGenInterval < 0)
             throw new IllegalArgumentException("Invalid request generation interval: " + reqGenInterval);
-        this.numFloors = numFloors;
+        if (numRequestsPerInterval < 0)
+            throw new IllegalArgumentException("Invalid number of requests per interval: " + numRequestsPerInterval);
+        this.properties = properties;
         this.elevatorsProperties = elevatorsProperties;
-        this.numElevators = this.elevatorsProperties.size();
         this.elevators = new ArrayList<>();
         this.reqGenInterval = reqGenInterval;
         this.randNumRequestsPerInterval = randNumRequestsPerInterval;
@@ -56,9 +54,10 @@ public class Building extends MyAgent {
 
     private void generateElevatorsAgents() {
         final AgentContainer containerController = this.getContainerController();
+        final int numElevators = properties.getNumElevators();
         for (int i = 0; i < numElevators; i++)
             try {
-                final Elevator elevator = new Elevator(elevatorsProperties.get(i), numElevators);
+                final Elevator elevator = new Elevator(elevatorsProperties.get(i), properties);
                 final AgentController ac = containerController.acceptNewAgent(Elevator.agentType + i, elevator);
                 ac.start();
                 elevators.add(elevator.getAID());
@@ -73,7 +72,7 @@ public class Building extends MyAgent {
             protected void handleAllResponses(Vector responses, Vector acceptances) {
                 super.handleAllResponses(responses, acceptances);
 
-                final int numResponses = numElevators;
+                final int numResponses = properties.getNumElevators();
                 if (responses.size() < numResponses)
                     display("Timeout expired: missing " + (numResponses - responses.size()) + " responses from " + numResponses + " expected");
 
@@ -107,7 +106,7 @@ public class Building extends MyAgent {
         @Override
         public void action() {
             if (endBlock < System.currentTimeMillis()) {
-                final int numRequests = randNumRequestsPerInterval ? MyRandom.randomInt(1, 3 * numElevators) : numRequestsPerInterval;
+                final int numRequests = randNumRequestsPerInterval ? MyRandom.randomInt(1, 3 * properties.getNumElevators()) : numRequestsPerInterval;
                 final ArrayList<Request> requests = generateNRequests(numRequests);
                 sendRequests(requests);
                 endBlock = System.currentTimeMillis() + reqGenInterval;
@@ -119,10 +118,12 @@ public class Building extends MyAgent {
         private ArrayList<Request> generateNRequests(final int n) {
             final ArrayList<Request> requests = new ArrayList<>();
             for (int i = 0; i < n; i++) {
-                // If the elevator does not have a keyboard when creating the request, the destination floor can/will be replaced
-                final int initialFloor = MyRandom.randomFloor(numFloors);
-                final int destinationFloor = MyRandom.randomFloorDifferentThan(initialFloor, numFloors);
-                requests.add(new Request(initialFloor, destinationFloor));
+                final int initialFloor = MyRandom.randomFloor(properties.getNumFloors());
+                if (properties.hasKeyboardOnRequest()) {
+                    final int destinationFloor = MyRandom.randomFloorDifferentThan(initialFloor, properties.getNumFloors());
+                    requests.add(new Request(initialFloor, destinationFloor));
+                } else
+                    requests.add(new Request(initialFloor));
             }
             return requests;
         }
