@@ -6,7 +6,10 @@ import jade.domain.FIPAAgentManagement.SearchConstraints;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
 
+import javax.management.timer.Timer;
+
 public class MyAgent extends Agent {
+    protected final long timeout = 2 * Timer.ONE_SECOND;
 
     @Override
     protected void takeDown() {

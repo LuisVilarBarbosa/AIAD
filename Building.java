@@ -8,7 +8,6 @@ import jade.wrapper.AgentContainer;
 import jade.wrapper.AgentController;
 import jade.wrapper.StaleProxyException;
 
-import javax.management.timer.Timer;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
@@ -80,14 +79,14 @@ public class Building extends MyAgent {
                 // Evaluate proposals.
                 long bestProposal = Long.MAX_VALUE;
                 ACLMessage accept = null;
-                Enumeration e = responses.elements();
+                final Enumeration e = responses.elements();
                 while (e.hasMoreElements()) {
-                    ACLMessage msg = (ACLMessage) e.nextElement();
+                    final ACLMessage msg = (ACLMessage) e.nextElement();
                     if (msg.getPerformative() == ACLMessage.PROPOSE) {
-                        ACLMessage reply = msg.createReply();
+                        final ACLMessage reply = msg.createReply();
                         reply.setPerformative(ACLMessage.REJECT_PROPOSAL);
                         acceptances.addElement(reply);
-                        MessageContent proposal = new MessageContent(msg.getContent());
+                        final MessageContent proposal = new MessageContent(msg.getContent());
                         if (proposal.getTimeToInitialFloor() <= bestProposal) {
                             bestProposal = proposal.getTimeToInitialFloor();
                             accept = reply;
@@ -145,7 +144,7 @@ public class Building extends MyAgent {
                 final MessageContent messageContent = new MessageContent(request.getInitialFloor(), request.getDestinationFloor(), Long.MAX_VALUE);
                 final ACLMessage msg = new ACLMessage(ACLMessage.CFP);
                 msg.setProtocol(FIPANames.InteractionProtocol.FIPA_CONTRACT_NET);
-                msg.setReplyByDate(new Date(System.currentTimeMillis() + 2 * Timer.ONE_SECOND));
+                msg.setReplyByDate(new Date(System.currentTimeMillis() + timeout));
                 msg.setSender(myAgent.getAID());
                 DFAgentDescription[] dfAgentDescriptions = searchOnDFService(Elevator.agentType);
                 numResponders = dfAgentDescriptions.length;
