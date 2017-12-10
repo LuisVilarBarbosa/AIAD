@@ -39,7 +39,10 @@ public class Elevator extends MyAgent {
         super.setup();
         registerOnDFService(agentType);
         addBehaviour(new ElevatorBehaviour());
-        setupContractNetResponderBehaviour();
+        if (buildingProperties.isElevatorsNegotiationAllowed()) {
+            addBehaviour(new ContractNetActivatorBehaviour());
+            setupContractNetResponderBehaviour();
+        }
         updateInterface();
     }
 
@@ -61,34 +64,29 @@ public class Elevator extends MyAgent {
 
             switch (fsm1State) {
                 case 0:
-                    if (buildingProperties.isElevatorsNegotiationAllowed())
-                        proposeRequestToOthers();
-                    fsm1State = (fsm1State + 1) % 5;
-                    break;
-                case 1:
                     peopleEntrance();
                     if (cyclePos >= internalRequests.size()) {
-                        fsm1State = (fsm1State + 1) % 5;
+                        fsm1State = (fsm1State + 1) % 4;
                         cyclePos = 0;
                     }
                     break;
-                case 2:
+                case 1:
                     final int currentFloor = state.getCurrentFloor();
                     final int nextFloorToStop = getClosestTo(currentFloor);
                     final int diff = nextFloorToStop - currentFloor;
                     state.setMovementState(diff > 0 ? ElevatorState.GOING_UP : (diff < 0 ? ElevatorState.GOING_DOWN : ElevatorState.STOPPED));
                     updateInterface(nextFloorToStop);
-                    fsm1State = (fsm1State + 1) % 5;
+                    fsm1State = (fsm1State + 1) % 4;
                     break;
-                case 3:
+                case 2:
                     if (state.getMovementState() != ElevatorState.STOPPED)
                         moveOneFloor();
-                    fsm1State = (fsm1State + 1) % 5;
+                    fsm1State = (fsm1State + 1) % 4;
                     break;
-                case 4:
+                case 3:
                     peopleExit();
                     if (cyclePos >= internalRequests.size()) {
-                        fsm1State = (fsm1State + 1) % 5;
+                        fsm1State = (fsm1State + 1) % 4;
                         cyclePos = 0;
                     }
                     break;
@@ -255,12 +253,29 @@ public class Elevator extends MyAgent {
                     cyclePos++;
             }
         }
+    }
+
+    private class ContractNetActivatorBehaviour extends CyclicBehaviour {
+        private final long intervalBtwProposals = 2 * Timer.ONE_SECOND;
+        private long blockEnd = System.currentTimeMillis();
+
+        @Override
+        public void action() {
+            final long currentMillis = System.currentTimeMillis();
+            if (blockEnd >= currentMillis) {
+                blockBehaviour(blockEnd - currentMillis, this);
+                return;
+            }
+            proposeRequestToOthers();
+            blockEnd = System.currentTimeMillis() + intervalBtwProposals;
+            blockBehaviour(intervalBtwProposals, this);
+        }
 
         private void proposeRequestToOthers() {
             if (!internalRequests.isEmpty()) {
                 final ACLMessage aclMessage = new ACLMessage(ACLMessage.CFP);
                 aclMessage.setProtocol(FIPANames.InteractionProtocol.FIPA_CONTRACT_NET);
-                aclMessage.setReplyByDate(new Date(System.currentTimeMillis() + 2 * Timer.ONE_SECOND));
+                aclMessage.setReplyByDate(new Date(System.currentTimeMillis() + intervalBtwProposals));
                 aclMessage.setSender(myAgent.getAID());
                 for (int i = 0; i < buildingProperties.getNumElevators(); i++)
                     if (!myAgent.getAID().getLocalName().equals(Elevator.agentType + i))
