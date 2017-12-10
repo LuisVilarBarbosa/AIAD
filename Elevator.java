@@ -39,10 +39,9 @@ public class Elevator extends MyAgent {
         super.setup();
         registerOnDFService(agentType);
         addBehaviour(new ElevatorBehaviour());
-        if (buildingProperties.isElevatorsNegotiationAllowed()) {
+        if (buildingProperties.isElevatorsNegotiationAllowed())
             addBehaviour(new ContractNetActivatorBehaviour());
-            setupContractNetResponderBehaviour();
-        }
+        setupContractNetResponderBehaviour();
         updateInterface();
     }
 
