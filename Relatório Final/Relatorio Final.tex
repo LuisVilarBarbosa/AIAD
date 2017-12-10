@@ -136,7 +136,11 @@ A \textbf{segunda} estratégia irá estimar o tempo que o elevador demoraria a r
 
 \subsection{Protocolos de interação} 
 
-FIPA CONTRACT NET (Sérgio)
+O protocolo de interação utilizado na decisão para alocação de pedidos aos elevadores é o \textbf{FIPA CONTRACT NET}.
+
+A cada período de geração de pedidos do \textit{Building} (reqGenInterval), para cada um destes é gerada uma \textit{ACLMessage} do tipo \textit{CFP}, com o protocolo \textbf{FIPA\_CONTRACT\_NET}, em que os os seus recetores são todos os elevadores do edifício. Em seguida, cada elevador após receber o \textbf{CFP}, calcula o tempo que vai demorar até ao andar inicial do pedido. Se este for menor do que o tempo que vem no pedido, o elevador envia uma \textit{ACLMessage} do tipo \textbf{PROPOSE}. Caso contrário, o agente enviar uma \textit{ACLMessage} do tipo \textbf{REFUSE}. Quando o edifício recebe as propostas (\textit{ACLMessage} do tipo \textbf{PROPOSE}), analisa a melhor com base nos tempos e envia uma \textit{ACLMessage} do tipo \textbf{REJECT\_PROPOSAL} para todas, exceto para a melhor proposta, em que envia uma \textit{ACLMessage} do tipo \textbf{ACCEPT\_PROPOSAL}, ficando assim alocado o pedido a este elevador.
+
+Também um elevador pode negociar o seu pior pedido com os restantes elevadores: assim, cria uma mensagem do tipo \textbf{CFP} com a informação do seu pior pedido e envia para os restantes elevadores. A gestão da receção deste pedido é feita de forma igual à da receção de pedidos do \textit{Building}. Caso não consiga atribuir a outro elevador, o pedido mantém-se alocado ao próprio. 
 
 \newpage
 
@@ -151,7 +155,10 @@ O projeto foi desenvolvido utilizando o IntelliJ IDEA Community Edition no siste
 
 \subsection{Estrutura da aplicação} 
 
-(Sérgio já tem o diagrama de classes)
+\begin{center}
+\hspace*{-3.2cm}
+	\includegraphics[scale=0.3]{class_model.png}\linebreak\linebreak
+\end{center}
 
 \subsection{Detalhes relevantes da implementação} 
 
