@@ -127,15 +127,15 @@ Verifica, também, para todos os pedidos atendidos do elevador, se estes já se 
 
 De forma a comparar o desempenho dos elevadores com diferentes heurísticas, foram implementadas quatro estratégias de alocação de pedidos. Estas quatro estratégias suportam um dos seguintes modelos: o primeiro, em que existe apenas um botão de chamada, ou um segundo que assume a existência de um teclado onde é possível indicar o piso de destino.
 
-A \textbf{primeira} estratégia assume o sistema tradicional onde cada elevador possui uma estratégia fixa e individual e segue o primeiro modelo: atende o pedido o elevador que se encontra mais próximo do piso onde a chamada foi efetuada. Para isto ser possível, os elevadores comunicam entre si através do protocolo de interação que será descrito mais à frente. 
+A \textbf{primeira} estratégia assume o sistema tradicional onde cada elevador possui uma estratégia fixa e individual e segue o primeiro modelo: atende o pedido o elevador que chega mais depressa ao piso onde a chamada foi efetuada. Para isto ser possível, os elevadores comunicam entre si através do protocolo de interação que será descrito mais à frente. 
 
-Para tornar o envio de requests para outros elevadores melhor, seria necessário pedir-lhes feedback para todos os requests e isso sobrecarregaria a rede de negociação, só se pedindo ajuda para o pior pedido de cada vez. Se não podem ajudar para o pior, provavelmente não podem ajudar para outros. E iterativamente, ao alocar os piores pedidos a outros, optimiza-se/reduz-se os tempos de espera.
+Para melhorar a alocação de pedidos a outros elevadores, seria necessário pedir-lhes feedback para todos os pedidos e isso sobrecarregaria a rede de negociação, só se pedindo ajuda para o pior pedido de cada vez. Se não podem ajudar para o pior pedido, provavelmente não podem ajudar para outros pedidos. E iterativamente, ao alocar os piores pedidos a outros, optimiza-se/reduz-se os tempos de espera.
 
-A \textbf{segunda} estratégia segue o segundo modelo, onde o elevador já possui a informação de qual é o piso de destino, conseguindo calcular o tempo de espera exato, permitindo uma alocação mais correta dos pedidos.
+A \textbf{segunda} estratégia segue o segundo modelo, onde o elevador já possui a informação de qual é o piso de destino, conseguindo calcular o tempo total até conseguir concluir o pedido, permitindo uma alocação mais correta dos pedidos.
 
 As duas estratégias anteriores utilizam o protocolo de interação descrito abaixo para que os elevadores negoceiem entre si. Para termos melhores termos de comparação, achamos correto criar outras duas estratégias em que não existe negociação.
 
-Desta forma, a \textbf{terceira} estratégia é idêntica à primeira e a \textbf{quarta} idêntica à segunda, exceto na parte em que negoceiam. Assim, ambas estimam o tempo que o elevador demoraria a responder a um pedido caso fosse alocado a ele.
+Desta forma, a \textbf{terceira} estratégia é idêntica à primeira e a \textbf{quarta} idêntica à segunda, exceto na parte em que negoceiam. Assim, ambas estimam o tempo que o elevador demoraria a responder a um pedido caso fosse alocado a ele e não pudesse ser transferido para outro elevador.
 
 \subsection{Protocolos de interação} 
 
@@ -169,23 +169,23 @@ O projeto foi desenvolvido utilizando o IntelliJ IDEA Community Edition no siste
 
 \subsection{Detalhes relevantes da implementação} 
 
-Todo o projeto foi desenvolvido de forma a minimizar a possibilidade de ocorrerem erros, sendo que a classe mais complexa é a classe 'Elevator' que implementa uma máquina de estados complexa no seu "ElevatorBehaviour". Todos os outros agentes também implementam uma máquina de estados nos seus "Behaviour", mas são máquinas de estados muito simples.
+Todo o projeto foi desenvolvido de forma a minimizar a possibilidade de ocorrerem erros, sendo que a classe mais complexa é a classe \textit{Elevator} que implementa uma máquina de estados complexa no seu \textit{ElevatorBehaviour}. Todos os outros agentes também implementam uma máquina de estados nos seus \textit{Behaviour}, mas são máquinas de estados muito simples.
 
-A classe 'MyBoot' é a classe por onde o programa arranca, sendo que esta vai ler os parâmetros definidos na consola ou num ficheiro e inicia um agente do tipo 'Building' e outro do tipo 'MyInterface'.
+A classe \textit{MyBoot} é a classe por onde o programa arranca, sendo que esta vai ler os parâmetros definidos na consola ou num ficheiro e inicia um agente do tipo \textit{Building} e outro do tipo \textit{MyInterface}.
 
-A classe 'Building' por sua vez vai iniciar um conjunto de agentes do tipo 'Elevator'.
+A classe \textit{Building} por sua vez vai iniciar um conjunto de agentes do tipo \textit{Elevator}.
 
-Todos os agentes criados são descendentes da classe 'MyAgent' que extende 'Agent' e implementa alguns métodos tranversais aos nossos diversos agentes.
+Todos os agentes criados são descendentes da classe \textit{MyAgent} que extende \textit{Agent} e implementa alguns métodos tranversais aos nossos diversos agentes.
 
-O 'Building' tem um intervalo de tempo definido pelo utilizador para gerar novos pedidos, sendo que, de cada vez, gera um conjunto de pedidos e inicia uma \textit{contract net} para alocar cada pedido ao melhor elevador.
+O \textit{Building} tem um intervalo de tempo definido pelo utilizador para gerar novos pedidos, sendo que, de cada vez, gera um conjunto de pedidos e inicia uma \textit{contract net} para alocar cada pedido ao melhor elevador.
 
-Já os elevadores escolhem da sua lista de pedidos aquele que apresenta o maior tempo entre quando foi criado e quando estará completamente atendido, ou seja, a pessoa estará no andar de destino desejado. Com este pedido, iniciam uma \textit{contract net} e alocam o pedido ao elevador que levar menos tempo a levar a pessoa até ao seu piso de destino (este cálculo inclui o tempo até chegar ao piso do pedido mais o tempo previsto até chegar ao destino). É iniciada, por cada elevador, uma \textit{contract net} com um pedido a cada 2 segundos. Por cada andar que o elevador anda, vê se deve deixar sair pessoas, vê se há pessoas a entrar, reavalia qual o melhor piso como próximo destino (escolhe o destino ou piso inicial mais próximo, sendo que para escolher um piso inicial tem de ser possível a entrada de mais pessoas) e move um andar se houver algum pedido para outro piso.
+Já os elevadores escolhem da sua lista de pedidos aquele que apresenta o maior tempo entre quando foi criado e quando estará completamente atendido, ou seja, quando a pessoa estará no andar de destino desejado. Com este pedido, iniciam uma \textit{contract net} e alocam o pedido ao elevador que levar menos tempo a levar a pessoa até ao seu piso de destino (este cálculo inclui o tempo até chegar ao piso do pedido mais o tempo previsto até chegar ao destino). É iniciada, por cada elevador, uma \textit{contract net} com um pedido a cada 2 segundos. Por cada andar que o elevador anda, vê se deve deixar sair pessoas, vê se há pessoas a entrar, reavalia qual o melhor piso como próximo destino (escolhe o piso de destino ou piso inicial mais próximo, sendo que para escolher um piso inicial tem de ser possível a entrada de mais pessoas) e move-se um andar, se houver algum pedido para outro piso.
 
-Para escolher os recetores das mensagens, tanto o 'Building' como os 'Elevator' usam o DirectoryFacilitator para encontrar os elevadores e assim adicioná-los como recetores. Eles são pesquisados com base no seu tipo e, se for um elevador a enviar, ele não envia a si mesmo.
+Para escolher os recetores das mensagens, tanto o \textit{Building} como os \textit{Elevator} usam o \textit{Directory Facilitator} para encontrar os elevadores e assim adicioná-los como recetores. Eles são pesquisados com base no seu tipo e, se for um elevador a enviar, ele não envia a si mesmo.
 
-A classe 'MyInterface' é um agente que não deve ser movido para outra máquina que cria uma interface gráfica e um ficheiro, apresentando dados sobre a situação atual de cada elevador e guardando esses dados num ficheiro definido pelo utilizador. A interface gráfica e o ficheiro são atualizados sempre que é recebida uma mensagem dirigida ao agente 'MyInterface' contendo os novos dados de um elevador.
+A classe \textit{MyInterface} é um agente que não deve ser movido para outra máquina que cria uma interface gráfica e um ficheiro, apresentando dados sobre a situação atual de cada elevador e guardando esses dados num ficheiro definido pelo utilizador. A interface gráfica e o ficheiro são atualizados sempre que é recebida uma mensagem dirigida ao agente \textit{MyInterface} contendo os novos dados de um elevador.
 
-Existe um conjunto de classes que serve para guardar informação de forma organizada, algumas que disponibilizam funções bastantes utilizadas em todo o programa e a classe 'MessageContent' a transformação da informação necessária à \textit{contract net} de variáveis para string e, ao contrário, de string a variáveis.
+Existe um conjunto de classes que serve para guardar informação de forma organizada, algumas que disponibilizam funções bastantes utilizadas em todo o programa e a classe \textit{MessageContent} que permite a transformação da informação necessária à \textit{contract net} de variáveis para \textit{string} e, ao contrário, de \textit{string} para variáveis.
 
 \newpage
 
